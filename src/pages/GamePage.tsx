@@ -118,7 +118,7 @@ export function GamePage() {
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-4 lg:space-y-5">
         <GameSessionHeader
           difficulty={difficulty}
           difficultyLabel={difficultyConfig.label}
@@ -132,12 +132,12 @@ export function GamePage() {
           isPaused={isPaused}
         />
 
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-          <div className="rounded-[2rem] border border-slate-200/90 bg-white/82 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-6">
+        <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="rounded-[1.9rem] border border-slate-200/90 bg-white/82 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-200/75">Sudoku Board</p>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-300">
                   Select any cell to begin. Fixed clues stay locked.
                 </p>
               </div>
@@ -150,7 +150,7 @@ export function GamePage() {
               </button>
             </div>
 
-            <div className="mt-5 flex justify-center">
+            <div className="mt-4 flex justify-center">
               <SudokuBoard
                 board={board}
                 notes={notes}
@@ -163,7 +163,7 @@ export function GamePage() {
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             <GameControlPanel
               difficulty={difficulty}
               selectedCell={selectedCell}

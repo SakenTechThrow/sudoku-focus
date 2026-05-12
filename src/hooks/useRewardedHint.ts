@@ -34,7 +34,7 @@ export function useRewardedHint({
   }, [])
 
   const hintActionLabel = useMemo(
-    () => (requiresAd ? 'Watch ad for hint' : 'Hint'),
+    () => (requiresAd ? 'Unlock hint' : 'Hint'),
     [requiresAd],
   )
 

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { CheckCircle2, Copy, Crown, Users2 } from 'lucide-react'
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
+import { NFactorialRewardedAdModal } from '../components/ads/NFactorialRewardedAdModal'
 import { NumberPad } from '../components/board/NumberPad'
 import { SudokuBoard } from '../components/board/SudokuBoard'
 import { AICoachPanel } from '../components/coach/AICoachPanel'
@@ -9,6 +10,7 @@ import { difficultyConfig } from '../constants/difficulty'
 import { useAICoach } from '../hooks/useAICoach'
 import { useAuth } from '../hooks/useAuth'
 import { useOnlineRoom } from '../hooks/useOnlineRoom'
+import { useRewardedHint } from '../hooks/useRewardedHint'
 import { buildAuthRedirectPath } from '../lib/authRedirect'
 import { cn } from '../lib/utils'
 
@@ -86,6 +88,10 @@ export function OnlineRoomPage() {
     fixedCells,
     selectedCell,
     selectedValue,
+  })
+  const rewardedHint = useRewardedHint({
+    hintsUsed,
+    revealHint,
   })
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null)
   const selectedCellFixed = selectedCell
@@ -178,7 +184,7 @@ export function OnlineRoomPage() {
   const numberPadCompleted = editingLocked || completed
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-5">
       <GameSessionHeader
         difficulty={room.difficulty}
         difficultyLabel={difficultyMeta.label}
@@ -195,7 +201,7 @@ export function OnlineRoomPage() {
         description={roomDescription}
       />
 
-      <section className="rounded-[2rem] border border-slate-200/90 bg-white/82 p-6 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)]">
+      <section className="rounded-[1.9rem] border border-slate-200/90 bg-white/82 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Room details</p>
@@ -284,15 +290,15 @@ export function OnlineRoomPage() {
         </section>
       ) : null}
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="space-y-6">
-          <div className="rounded-[2rem] border border-slate-200/90 bg-white/82 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-6">
+      <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="space-y-4">
+          <div className="rounded-[1.9rem] border border-slate-200/90 bg-white/82 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-200/75">
                   {room.mode === 'collaborative' ? 'Shared board' : 'Your race board'}
                 </p>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-300">
                   {room.mode === 'collaborative'
                     ? 'Every move updates the same room board for everyone.'
                     : 'This board is private to you while standings update live for the room.'}
@@ -307,7 +313,7 @@ export function OnlineRoomPage() {
               </button>
             </div>
 
-            <div className="mt-5 flex justify-center">
+            <div className="mt-4 flex justify-center">
               <SudokuBoard
                 board={board}
                 notes={notes}
@@ -398,58 +404,7 @@ export function OnlineRoomPage() {
           ) : null}
         </div>
 
-        <div className="space-y-6">
-          <section className="rounded-[2rem] border border-slate-200/90 bg-white/82 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)]">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-200/75">Room players</p>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                  Live roster for this room.
-                </p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-white text-cyan-800 dark:border-white/10 dark:bg-slate-950/55 dark:text-cyan-100">
-                <Users2 className="h-5 w-5" />
-              </div>
-            </div>
-
-            <div className="mt-5 space-y-3">
-              {players.map((player) => {
-                const joinedTime = formatJoinedTime(player.createdAt ?? player.joinedAt)
-
-                return (
-                  <div
-                    key={player.id}
-                    className="rounded-[1.4rem] border border-slate-200 bg-slate-50/90 px-4 py-3 dark:border-white/10 dark:bg-slate-950/45"
-                  >
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-slate-950 dark:text-white">
-                        {player.displayName}
-                        {player.userId === currentPlayer?.userId ? ' (You)' : ''}
-                      </p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">{player.city}</p>
-                      {joinedTime ? (
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                          Joined {joinedTime}
-                        </p>
-                      ) : null}
-                    </div>
-                    <span className={cn(
-                      'rounded-full px-3 py-1 text-xs font-medium',
-                      player.completed
-                        ? 'bg-emerald-100/85 text-emerald-950 dark:bg-emerald-400/10 dark:text-emerald-100'
-                        : 'bg-slate-200 text-slate-700 dark:bg-white/8 dark:text-slate-300',
-                    )}
-                    >
-                      {player.completed ? 'Done' : 'Live'}
-                    </span>
-                  </div>
-                  </div>
-                )
-              })}
-            </div>
-          </section>
-
+        <div className="space-y-4">
           <NumberPad
             selectedCell={selectedCell}
             selectedValue={selectedValue}
@@ -462,8 +417,8 @@ export function OnlineRoomPage() {
             onClear={clearCell}
           />
 
-          <section className="rounded-[2rem] border border-slate-200/90 bg-white/82 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)]">
-            <div className="grid gap-3">
+          <section className="rounded-[1.8rem] border border-slate-200/90 bg-white/82 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5">
+            <div className="grid gap-3 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={toggleNotesMode}
@@ -477,12 +432,12 @@ export function OnlineRoomPage() {
                     : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-white/8 dark:bg-slate-950/40 dark:text-slate-500',
                 )}
               >
-                {notesMode ? 'Notes Mode Active' : 'Enable Notes Mode'}
+                {notesMode ? 'Notes On' : 'Notes'}
               </button>
 
               <button
                 type="button"
-                onClick={() => void revealHint()}
+                onClick={rewardedHint.requestHint}
                 disabled={!canEdit}
                 className={cn(
                   'rounded-2xl border px-4 py-3 text-sm font-semibold transition',
@@ -491,7 +446,7 @@ export function OnlineRoomPage() {
                     : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-white/8 dark:bg-slate-950/40 dark:text-slate-500',
                 )}
               >
-                Reveal Hint
+                {rewardedHint.hintActionLabel}
               </button>
 
               <button
@@ -581,8 +536,65 @@ export function OnlineRoomPage() {
             focusSignal={coach.focusSignal}
             onRefresh={coach.refreshExplanation}
           />
+
+          <section className="rounded-[1.8rem] border border-slate-200/90 bg-white/82 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-200/75">Room players</p>
+                <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                  Live roster for this room.
+                </p>
+              </div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-cyan-800 dark:border-white/10 dark:bg-slate-950/55 dark:text-cyan-100">
+                <Users2 className="h-5 w-5" />
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {players.map((player) => {
+                const joinedTime = formatJoinedTime(player.createdAt ?? player.joinedAt)
+
+                return (
+                  <div
+                    key={player.id}
+                    className="rounded-[1.4rem] border border-slate-200 bg-slate-50/90 px-4 py-3 dark:border-white/10 dark:bg-slate-950/45"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-slate-950 dark:text-white">
+                          {player.displayName}
+                          {player.userId === currentPlayer?.userId ? ' (You)' : ''}
+                        </p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{player.city}</p>
+                        {joinedTime ? (
+                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            Joined {joinedTime}
+                          </p>
+                        ) : null}
+                      </div>
+                      <span className={cn(
+                        'rounded-full px-3 py-1 text-xs font-medium',
+                        player.completed
+                          ? 'bg-emerald-100/85 text-emerald-950 dark:bg-emerald-400/10 dark:text-emerald-100'
+                          : 'bg-slate-200 text-slate-700 dark:bg-white/8 dark:text-slate-300',
+                      )}
+                      >
+                        {player.completed ? 'Done' : 'Live'}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
         </div>
       </section>
+
+      <NFactorialRewardedAdModal
+        isOpen={rewardedHint.isAdOpen}
+        onConfirm={rewardedHint.confirmAdAndRevealHint}
+        onCancel={rewardedHint.cancelAd}
+      />
     </div>
   )
 }

@@ -31,8 +31,8 @@ export function SudokuBoard({
   onSelectCell,
 }: SudokuBoardProps) {
   return (
-    <div className="relative w-full max-w-[40rem]">
-      <div className="grid grid-cols-9 overflow-hidden rounded-[1.5rem] border-2 border-white/14 bg-slate-950/85 shadow-[0_24px_80px_rgba(2,8,24,0.45)]">
+    <div className="relative w-full max-w-[32.5rem]">
+      <div className="grid aspect-square grid-cols-9 overflow-hidden rounded-[1.35rem] border-2 border-white/14 bg-slate-950/85 shadow-[0_24px_80px_rgba(2,8,24,0.45)]">
         {board.flatMap((row, rowIndex) =>
           row.map((value, columnIndex) => {
             const isSelected =
@@ -78,10 +78,10 @@ export function SudokuBoard({
       </div>
 
       {isPaused ? (
-        <div className="absolute inset-0 flex items-center justify-center rounded-[1.5rem] bg-slate-950/78 backdrop-blur-sm">
-          <div className="rounded-[1.5rem] border border-white/10 bg-white/8 px-6 py-5 text-center shadow-[0_18px_60px_rgba(2,8,24,0.35)]">
+        <div className="absolute inset-0 flex items-center justify-center rounded-[1.35rem] bg-slate-950/78 backdrop-blur-sm">
+          <div className="rounded-[1.4rem] border border-white/10 bg-white/8 px-5 py-4 text-center shadow-[0_18px_60px_rgba(2,8,24,0.35)]">
             <p className="text-xs uppercase tracking-[0.28em] text-cyan-200/75">Game paused</p>
-            <p className="mt-3 font-display text-3xl font-semibold text-white">Take a breath</p>
+            <p className="mt-3 font-display text-2xl font-semibold text-white sm:text-3xl">Take a breath</p>
             <p className="mt-2 text-sm text-slate-300">Resume when you&apos;re ready to focus again.</p>
           </div>
         </div>

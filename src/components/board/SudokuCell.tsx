@@ -30,7 +30,7 @@ export function SudokuCell({
       onClick={onClick}
       disabled={isDisabled}
       className={cn(
-        'flex aspect-square w-full items-center justify-center text-base font-semibold transition sm:text-xl',
+        'flex aspect-square w-full items-center justify-center text-sm font-semibold transition sm:text-lg md:text-xl',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/70 focus-visible:ring-inset',
         isFixed && 'bg-slate-900/95 text-white',
         !isFixed && 'bg-slate-950/80 text-cyan-100 hover:bg-slate-900/80',
@@ -44,7 +44,7 @@ export function SudokuCell({
       {value !== 0 ? (
         value
       ) : notes.length > 0 ? (
-        <span className="grid h-full w-full grid-cols-3 grid-rows-3 gap-px p-1 text-[0.5rem] font-medium text-slate-300 sm:text-[0.6rem]">
+        <span className="grid h-full w-full grid-cols-3 grid-rows-3 gap-px p-1 text-[0.42rem] font-medium text-slate-300 sm:text-[0.56rem]">
           {noteValues.map((note) => (
             <span
               key={note}
@@ -58,7 +58,7 @@ export function SudokuCell({
           ))}
         </span>
       ) : (
-        <span className="h-1.5 w-1.5 rounded-full bg-cyan-200/35" />
+        <span className="h-1.5 w-1.5 rounded-full bg-cyan-200/35 sm:h-2 sm:w-2" />
       )}
     </button>
   )
