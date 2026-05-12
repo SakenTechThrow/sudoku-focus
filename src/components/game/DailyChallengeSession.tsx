@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
+import { NFactorialAdCard } from '../ads/NFactorialAdCard'
 import { SudokuBoard } from '../board/SudokuBoard'
 import { AICoachPanel } from '../coach/AICoachPanel'
 import { LeaderboardTable } from '../leaderboard/LeaderboardTable'
@@ -10,6 +11,7 @@ import { useAICoach } from '../../hooks/useAICoach'
 import { useAuth } from '../../hooks/useAuth'
 import { useGamePersistence } from '../../hooks/useGamePersistence'
 import { useLeaderboard } from '../../hooks/useLeaderboard'
+import { useSessionAdDismissal } from '../../hooks/useSessionAdDismissal'
 import { useSudokuGame } from '../../hooks/useSudokuGame'
 import { calculateScore } from '../../lib/scoring'
 import type { DailyChallenge } from '../../types/sudoku'
@@ -108,6 +110,14 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
     mistakes,
     hintsUsed,
   }), [difficulty, hintsUsed, mistakes, timerSeconds])
+  const puzzleSignature = useMemo(
+    () => puzzle.flat().join(''),
+    [puzzle],
+  )
+  const adStorageKey =
+    `nfactorial-ad-dismissed-daily-${challenge.challengeDate}-${sessionId}-${puzzleSignature}`
+  const { isVisible: isNFactorialAdVisible, dismiss: dismissNFactorialAd } =
+    useSessionAdDismissal(adStorageKey, hintsUsed > 3)
 
   useEffect(() => {
     setSaveState(null)
@@ -216,6 +226,10 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
             showStartNewGame={false}
             showClearSavedProgress={false}
           />
+
+          {isNFactorialAdVisible ? (
+            <NFactorialAdCard onDismiss={dismissNFactorialAd} />
+          ) : null}
 
           <AICoachPanel
             title={coach.title}

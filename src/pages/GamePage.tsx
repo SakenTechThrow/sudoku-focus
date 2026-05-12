@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { NFactorialAdCard } from '../components/ads/NFactorialAdCard'
 import { SudokuBoard } from '../components/board/SudokuBoard'
 import { AICoachPanel } from '../components/coach/AICoachPanel'
 import { GameControlPanel } from '../components/game/GameControlPanel'
@@ -8,6 +9,7 @@ import { GameSessionHeader } from '../components/game/GameSessionHeader'
 import { useAICoach } from '../hooks/useAICoach'
 import { useAuth } from '../hooks/useAuth'
 import { useGamePersistence } from '../hooks/useGamePersistence'
+import { useSessionAdDismissal } from '../hooks/useSessionAdDismissal'
 import { useSudokuGame } from '../hooks/useSudokuGame'
 import { calculateScore } from '../lib/scoring'
 import type { SaveGameResult } from '../types/user'
@@ -64,6 +66,13 @@ export function GamePage() {
   const [saveState, setSaveState] = useState<SaveGameResult | null>(null)
   const [saveLoading, setSaveLoading] = useState(false)
   const [savedSessionId, setSavedSessionId] = useState<number | null>(null)
+  const puzzleSignature = useMemo(
+    () => puzzle.flat().join(''),
+    [puzzle],
+  )
+  const adStorageKey = `nfactorial-ad-dismissed-game-${sessionId}-${puzzleSignature}`
+  const { isVisible: isNFactorialAdVisible, dismiss: dismissNFactorialAd } =
+    useSessionAdDismissal(adStorageKey, hintsUsed > 3)
   const scoreEstimate = calculateScore({
     difficulty,
     timeSeconds: timerSeconds,
@@ -180,6 +189,10 @@ export function GamePage() {
               onTogglePause={togglePause}
               onClearSavedProgress={clearSavedProgress}
             />
+
+            {isNFactorialAdVisible ? (
+              <NFactorialAdCard onDismiss={dismissNFactorialAd} />
+            ) : null}
 
             <AICoachPanel
               title={coach.title}
