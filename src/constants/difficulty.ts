@@ -1,3 +1,4 @@
+import { MAX_MISTAKES } from './game'
 import type { Difficulty } from '../types/sudoku'
 
 export type DifficultyConfig = {
@@ -14,25 +15,25 @@ export const difficultyConfig: Record<Difficulty, DifficultyConfig> = {
     label: 'Easy',
     description: 'Calm warm-up with more starting clues.',
     cellsToRemove: 35,
-    mistakeLimit: 5,
+    mistakeLimit: MAX_MISTAKES,
   },
   medium: {
     label: 'Medium',
     description: 'Balanced challenge for a focused session.',
     cellsToRemove: 45,
-    mistakeLimit: 4,
+    mistakeLimit: MAX_MISTAKES,
   },
   hard: {
     label: 'Hard',
     description: 'Fewer clues with stronger pattern pressure.',
     cellsToRemove: 52,
-    mistakeLimit: 3,
+    mistakeLimit: MAX_MISTAKES,
   },
   expert: {
     label: 'Expert',
     description: 'Minimal clues for deep focus.',
     cellsToRemove: 58,
-    mistakeLimit: 3,
+    mistakeLimit: MAX_MISTAKES,
   },
 }
 

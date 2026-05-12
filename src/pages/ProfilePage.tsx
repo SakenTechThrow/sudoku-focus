@@ -142,7 +142,7 @@ export function ProfilePage() {
             <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
               <div className="flex items-center gap-2 text-cyan-100">
                 <Sparkles className="h-4 w-4" />
-                <span className="text-xs uppercase tracking-[0.24em]">Games completed</span>
+                <span className="text-xs uppercase tracking-[0.24em]">Puzzles won</span>
               </div>
               <p className="mt-3 text-lg font-semibold text-white">{stats.totalCompletedGames}</p>
             </div>

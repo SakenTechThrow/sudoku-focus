@@ -1,8 +1,10 @@
 import { useCallback, useState } from 'react'
+import { MAX_MISTAKES } from '../constants/game'
 import { isDifficulty } from '../constants/difficulty'
 import type {
   CandidateValue,
   CellValue,
+  GameStatus,
   NotesBoard,
   PersistedSudokuGameState,
   SudokuBoard,
@@ -64,7 +66,29 @@ function isValidPersistedState(state: unknown): state is PersistedSudokuGameStat
     && typeof candidate.seconds === 'number'
     && candidate.seconds >= 0
     && typeof candidate.completed === 'boolean'
+    && (
+      candidate.status === undefined
+      || candidate.status === 'playing'
+      || candidate.status === 'won'
+      || candidate.status === 'lost'
+    )
     && typeof candidate.notesMode === 'boolean'
+}
+
+function normalizeStatus(state: Pick<PersistedSudokuGameState, 'completed' | 'mistakes'> & { status?: GameStatus }) {
+  if (state.status === 'playing' || state.status === 'won' || state.status === 'lost') {
+    return state.status
+  }
+
+  if (state.completed) {
+    return 'won'
+  }
+
+  if (state.mistakes >= MAX_MISTAKES) {
+    return 'lost'
+  }
+
+  return 'playing'
 }
 
 function loadSavedGameState(storageKey: string) {
@@ -86,7 +110,10 @@ function loadSavedGameState(storageKey: string) {
       return null
     }
 
-    return parsedState
+    return {
+      ...parsedState,
+      status: normalizeStatus(parsedState),
+    }
   } catch {
     window.localStorage.removeItem(storageKey)
     return null

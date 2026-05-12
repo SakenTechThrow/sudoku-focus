@@ -13,7 +13,13 @@ import {
 import { NumberPad } from '../board/NumberPad'
 import { DifficultySelector } from './DifficultySelector'
 import { cn } from '../../lib/utils'
-import type { CandidateValue, CellPosition, CheckResult, Difficulty } from '../../types/sudoku'
+import type {
+  CandidateValue,
+  CellPosition,
+  CheckResult,
+  Difficulty,
+  GameStatus,
+} from '../../types/sudoku'
 
 type GameControlPanelProps = {
   difficulty: Difficulty
@@ -21,7 +27,8 @@ type GameControlPanelProps = {
   selectedValue: CandidateValue | 0
   selectedNotes: CandidateValue[]
   isSelectedCellFixed: boolean
-  completed: boolean
+  status: GameStatus
+  isGameOver: boolean
   isPaused: boolean
   isComplete: boolean
   checkResult: CheckResult | null
@@ -51,7 +58,8 @@ export function GameControlPanel({
   selectedValue,
   selectedNotes,
   isSelectedCellFixed,
-  completed,
+  status,
+  isGameOver,
   isPaused,
   isComplete,
   checkResult,
@@ -74,7 +82,16 @@ export function GameControlPanel({
   startNewGameLabel = 'New Game',
   clearSavedProgressLabel = 'Clear Saved Game',
 }: GameControlPanelProps) {
-  const canInteract = !completed && !isPaused
+  const canInteract = !isGameOver && !isPaused
+  const sessionStatusCopy = status === 'lost'
+    ? 'Game over. Start a new puzzle or reset this board to keep earning points.'
+    : status === 'won'
+      ? 'Puzzle solved. Save the win or launch a fresh session when you are ready.'
+      : isPaused
+        ? 'The board is paused and protected from input.'
+        : isComplete
+          ? 'Every cell is filled. Check the solution or keep reviewing flagged cells.'
+          : 'Numbers, notes, hints, and keyboard shortcuts are all live on this board.'
 
   return (
     <div className="space-y-4">
@@ -83,7 +100,7 @@ export function GameControlPanel({
         selectedValue={selectedValue}
         selectedNotes={selectedNotes}
         isSelectedCellFixed={isSelectedCellFixed}
-        completed={completed}
+        completed={isGameOver}
         isPaused={isPaused}
         notesMode={notesMode}
         onValueSelect={onValueSelect}
@@ -103,16 +120,16 @@ export function GameControlPanel({
             </button>
           ) : null}
 
-          <button
-            type="button"
-            onClick={onTogglePause}
-            disabled={completed}
-            className={cn(
-              'flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition',
-              completed
-                ? 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400 dark:border-white/8 dark:bg-slate-950/40 dark:text-slate-500'
-                : 'bg-slate-950 text-[color:#f8fbff] hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-50',
-            )}
+            <button
+              type="button"
+              onClick={onTogglePause}
+              disabled={isGameOver}
+              className={cn(
+                'flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition',
+                isGameOver
+                  ? 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400 dark:border-white/8 dark:bg-slate-950/40 dark:text-slate-500'
+                  : 'bg-slate-950 text-[color:#f8fbff] hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-50',
+              )}
           >
             {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
             {isPaused ? 'Resume' : 'Pause'}
@@ -158,13 +175,7 @@ export function GameControlPanel({
           <TriangleAlert className="mt-0.5 h-5 w-5 text-amber-700 dark:text-amber-200" />
           <div>
             <p className="text-sm font-semibold text-slate-950 dark:text-white">Session status</p>
-            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-              {isPaused
-                ? 'The board is paused and protected from input.'
-                : isComplete
-                  ? 'Every cell is filled. Check the solution or keep reviewing flagged cells.'
-                  : 'Numbers, notes, hints, and keyboard shortcuts are all live on this board.'}
-            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{sessionStatusCopy}</p>
           </div>
         </div>
 
@@ -187,10 +198,10 @@ export function GameControlPanel({
           <button
             type="button"
             onClick={onCheckSolution}
-            disabled={isPaused}
+            disabled={isPaused || isGameOver}
             className={cn(
               'flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition',
-              isPaused
+              isPaused || isGameOver
                 ? 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400 dark:border-white/8 dark:bg-slate-950/40 dark:text-slate-500'
                 : 'bg-slate-950 text-[color:#f8fbff] hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-50',
             )}

@@ -13,6 +13,7 @@ import {
   supabase,
   supabaseConfigError,
 } from '../lib/supabaseClient'
+import { withTimeout } from '../lib/withTimeout'
 import type { AuthActionResult, AuthState, UserProfile } from '../types/user'
 
 type AuthContextValue = AuthState & {
@@ -77,84 +78,86 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const {
-        data: existingProfile,
-        error: existingProfileError,
-      } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', nextUser.id)
-        .maybeSingle()
+      return await withTimeout((async () => {
+        const {
+          data: existingProfile,
+          error: existingProfileError,
+        } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', nextUser.id)
+          .maybeSingle()
 
-      if (existingProfileError) {
-        throw existingProfileError
-      }
+        if (existingProfileError) {
+          throw existingProfileError
+        }
 
-      if (existingProfile) {
-        const normalizedProfile = normalizeProfile({
-          ...existingProfile,
-          email: existingProfile.email ?? nextUser.email ?? null,
-        } as UserProfile)
-
-        return normalizedProfile
-      }
-
-      const fallbackUsername =
-        ((nextUser.user_metadata as { username?: string } | undefined)?.username)
-        || nextUser.email?.split('@')[0]
-        || 'Sudoku Focus User'
-
-      const fallbackCity =
-        ((nextUser.user_metadata as { city?: string } | undefined)?.city)
-        || 'Almaty'
-
-      const { error: upsertError } = await supabase.from('profiles').upsert(
-        {
-          id: nextUser.id,
-          username: fallbackUsername,
-          city: fallbackCity,
-          xp: 0,
-        },
-        { onConflict: 'id' },
-      )
-
-      if (upsertError) {
-        throw upsertError
-      }
-
-      const {
-        data: createdProfile,
-        error: createdProfileError,
-      } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', nextUser.id)
-        .maybeSingle()
-
-      if (createdProfileError) {
-        throw createdProfileError
-      }
-
-      const normalizedCreatedProfile = createdProfile
-        ? normalizeProfile({
-            ...createdProfile,
-            email: createdProfile.email ?? nextUser.email ?? null,
+        if (existingProfile) {
+          const normalizedProfile = normalizeProfile({
+            ...existingProfile,
+            email: existingProfile.email ?? nextUser.email ?? null,
           } as UserProfile)
-        : normalizeProfile({
+
+          return normalizedProfile
+        }
+
+        const fallbackUsername =
+          ((nextUser.user_metadata as { username?: string } | undefined)?.username)
+          || nextUser.email?.split('@')[0]
+          || 'Sudoku Focus User'
+
+        const fallbackCity =
+          ((nextUser.user_metadata as { city?: string } | undefined)?.city)
+          || 'Almaty'
+
+        const { error: upsertError } = await supabase.from('profiles').upsert(
+          {
             id: nextUser.id,
-            email: nextUser.email ?? null,
             username: fallbackUsername,
             city: fallbackCity,
             xp: 0,
-          })
+          },
+          { onConflict: 'id' },
+        )
 
-      return normalizedCreatedProfile
+        if (upsertError) {
+          throw upsertError
+        }
+
+        const {
+          data: createdProfile,
+          error: createdProfileError,
+        } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', nextUser.id)
+          .maybeSingle()
+
+        if (createdProfileError) {
+          throw createdProfileError
+        }
+
+        const normalizedCreatedProfile = createdProfile
+          ? normalizeProfile({
+              ...createdProfile,
+              email: createdProfile.email ?? nextUser.email ?? null,
+            } as UserProfile)
+          : normalizeProfile({
+              id: nextUser.id,
+              email: nextUser.email ?? null,
+              username: fallbackUsername,
+              city: fallbackCity,
+              xp: 0,
+            })
+
+        return normalizedCreatedProfile
+      })(), 12000)
     } catch (error) {
       if (import.meta.env.DEV) {
         console.error('Profile ensure error:', error)
       }
 
-      throw new Error(getErrorMessage(error, 'Unable to load your profile right now.'), {
+      throw new Error(getErrorMessage(error, 'Could not load your profile. Please try again.'), {
         cause: error,
       })
     }
@@ -183,7 +186,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function initializeAuth() {
       try {
-        const { data, error } = await client.auth.getSession()
+        const { data, error } = await withTimeout(
+          client.auth.getSession(),
+          12000,
+        )
 
         if (error) {
           throw error
@@ -203,7 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         setProfile(null)
-        setProfileError(getErrorMessage(error, 'Unable to load your profile right now.'))
+        setProfileError(getErrorMessage(error, 'Could not load your profile. Please try again.'))
       } finally {
         if (isMounted) {
           setLoading(false)
@@ -223,7 +229,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       void loadProfile(sessionUser)
         .catch((error) => {
           setProfile(null)
-          setProfileError(getErrorMessage(error, 'Unable to load your profile right now.'))
+          setProfileError(getErrorMessage(error, 'Could not load your profile. Please try again.'))
         })
         .finally(() => {
           setLoading(false)
@@ -253,19 +259,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const normalizedCity = city.trim() || 'Almaty'
       const normalizedUsername = username.trim()
 
-      const { data, error } = await supabase.auth.signUp({
-        email: normalizedEmail,
-        password,
-        options: {
-          data: {
-            username: normalizedUsername,
-            city: normalizedCity,
+      const { data, error } = await withTimeout(
+        supabase.auth.signUp({
+          email: normalizedEmail,
+          password,
+          options: {
+            data: {
+              username: normalizedUsername,
+              city: normalizedCity,
+            },
           },
-        },
-      })
+        }),
+        15000,
+      )
 
       if (error) {
-        throw new Error(getErrorMessage(error, 'Unable to create your account right now.'))
+        throw new Error(getErrorMessage(error, 'Could not create your account. Please try again.'))
       }
 
       const authUser = data.user
@@ -305,7 +314,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         message: 'Account created. You are now signed in.',
       }
     } catch (error) {
-      throw new Error(getErrorMessage(error, 'Unable to create your account right now.'), {
+      throw new Error(getErrorMessage(error, 'Could not create your account. Please try again.'), {
         cause: error,
       })
     } finally {
@@ -321,13 +330,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true)
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      })
+      const { data, error } = await withTimeout(
+        supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        }),
+        15000,
+      )
 
       if (error) {
-        throw new Error(getErrorMessage(error, 'Unable to sign in right now.'))
+        throw new Error(getErrorMessage(error, 'Could not sign you in. Please try again.'))
       }
 
       setUser(data.user)
@@ -337,7 +349,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         message: 'Signed in successfully.',
       }
     } catch (error) {
-      throw new Error(getErrorMessage(error, 'Unable to sign in right now.'), {
+      throw new Error(getErrorMessage(error, 'Could not sign you in. Please try again.'), {
         cause: error,
       })
     } finally {
@@ -371,7 +383,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true)
 
     try {
-      await loadProfile(user)
+      await withTimeout(
+        loadProfile(user),
+        12000,
+      )
     } finally {
       setLoading(false)
     }

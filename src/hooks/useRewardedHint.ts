@@ -6,28 +6,40 @@ type RevealHintHandler = () => void | boolean | Promise<void | boolean>
 type UseRewardedHintOptions = {
   hintsUsed: number
   revealHint: RevealHintHandler
+  disabled?: boolean
 }
 
 export function useRewardedHint({
   hintsUsed,
   revealHint,
+  disabled = false,
 }: UseRewardedHintOptions) {
   const [isAdOpen, setIsAdOpen] = useState(false)
-  const requiresAd = hintsUsed >= FREE_HINT_LIMIT
+  const requiresAd = !disabled && hintsUsed >= FREE_HINT_LIMIT
 
   const requestHint = useCallback(() => {
+    if (disabled) {
+      setIsAdOpen(false)
+      return
+    }
+
     if (requiresAd) {
       setIsAdOpen(true)
       return
     }
 
     void Promise.resolve(revealHint())
-  }, [requiresAd, revealHint])
+  }, [disabled, requiresAd, revealHint])
 
   const confirmAdAndRevealHint = useCallback(() => {
+    if (disabled) {
+      setIsAdOpen(false)
+      return
+    }
+
     setIsAdOpen(false)
     void Promise.resolve(revealHint())
-  }, [revealHint])
+  }, [disabled, revealHint])
 
   const cancelAd = useCallback(() => {
     setIsAdOpen(false)

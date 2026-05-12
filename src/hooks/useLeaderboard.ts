@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { isDifficulty } from '../constants/difficulty'
 import { supabase, supabaseConfigError } from '../lib/supabaseClient'
+import { withTimeout } from '../lib/withTimeout'
 import type {
   LeaderboardDifficultyFilter,
   LeaderboardEntry,
@@ -121,7 +122,10 @@ export function useLeaderboard({
           query = query.eq('challenge_date', challengeDate)
         }
 
-        const { data, error: loadError } = await query
+        const { data, error: loadError } = await withTimeout(
+          Promise.resolve(query),
+          12000,
+        )
 
         if (loadError) {
           throw loadError
@@ -142,7 +146,7 @@ export function useLeaderboard({
         }
 
         setEntries([])
-        setError(getErrorMessage(loadLeaderboardError, 'Unable to load leaderboard entries right now.'))
+        setError(getErrorMessage(loadLeaderboardError, 'Could not load the leaderboard. Please try again.'))
       } finally {
         if (isMounted) {
           setLoading(false)

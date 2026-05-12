@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { NFactorialRewardedAdModal } from '../components/ads/NFactorialRewardedAdModal'
 import { SudokuBoard } from '../components/board/SudokuBoard'
 import { AICoachPanel } from '../components/coach/AICoachPanel'
 import { GameControlPanel } from '../components/game/GameControlPanel'
+import { GameResultModal } from '../components/game/GameResultModal'
 import { GameSessionHeader } from '../components/game/GameSessionHeader'
 import { ShareResultCard } from '../components/share/ShareResultCard'
 import { useAICoach } from '../hooks/useAICoach'
@@ -13,7 +13,7 @@ import { useGamePersistence } from '../hooks/useGamePersistence'
 import { useRewardedHint } from '../hooks/useRewardedHint'
 import { useSudokuGame } from '../hooks/useSudokuGame'
 import { buildAuthRedirectPath } from '../lib/authRedirect'
-import { calculateScore } from '../lib/scoring'
+import { calculateScore, calculateXpFromScore } from '../lib/scoring'
 import type { SaveGameResult } from '../types/user'
 
 export function GamePage() {
@@ -29,10 +29,13 @@ export function GamePage() {
     selectedValue,
     selectedNotes,
     mistakes,
+    mistakeLimit,
     hintsUsed,
     timerSeconds,
     sessionId,
-    completed,
+    status,
+    isGameOver,
+    lastMove,
     checkResult,
     notesMode,
     isPaused,
@@ -71,25 +74,29 @@ export function GamePage() {
   const rewardedHint = useRewardedHint({
     hintsUsed,
     revealHint,
+    disabled: isGameOver,
   })
+  const isWon = status === 'won'
   const scoreEstimate = calculateScore({
     difficulty,
     timeSeconds: timerSeconds,
     mistakes,
     hintsUsed,
+    status,
   })
+  const xpEstimate = calculateXpFromScore(scoreEstimate)
   const shareUrl = typeof window === 'undefined'
     ? '/game'
     : `${window.location.origin}/game`
 
   useEffect(() => {
-    if (completed) {
+    if (isGameOver) {
       setIsSuccessVisible(true)
       return
     }
 
     setIsSuccessVisible(false)
-  }, [completed])
+  }, [isGameOver])
 
   useEffect(() => {
     setSaveState(null)
@@ -110,6 +117,7 @@ export function GamePage() {
       timeSeconds: timerSeconds,
       mistakes,
       hintsUsed,
+      status,
     })
     setSaveState(result)
 
@@ -128,12 +136,13 @@ export function GamePage() {
           difficultyLabel={difficultyConfig.label}
           difficultyDescription={difficultyConfig.description}
           cellsToRemove={difficultyConfig.cellsToRemove}
-          mistakeLimit={difficultyConfig.mistakeLimit}
+          mistakeLimit={mistakeLimit}
           formattedTime={formattedTime}
           mistakes={mistakes}
           hintsUsed={hintsUsed}
           notesMode={notesMode}
           isPaused={isPaused}
+          status={status}
         />
 
         <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_22rem]">
@@ -157,11 +166,15 @@ export function GamePage() {
             <div className="mt-4 flex justify-center">
               <SudokuBoard
                 board={board}
+                solution={solution}
                 notes={notes}
                 fixedCells={fixedCells}
                 selectedCell={selectedCell}
+                lastMove={lastMove}
                 invalidCellKeys={invalidCellKeys}
                 isPaused={isPaused}
+                isInteractionLocked={isGameOver}
+                celebrate={isWon}
                 onSelectCell={selectCell}
               />
             </div>
@@ -174,7 +187,8 @@ export function GamePage() {
               selectedValue={selectedValue}
               selectedNotes={selectedNotes}
               isSelectedCellFixed={isSelectedCellFixed}
-              completed={completed}
+              status={status}
+              isGameOver={isGameOver}
               isPaused={isPaused}
               isComplete={isComplete}
               checkResult={checkResult}
@@ -214,62 +228,57 @@ export function GamePage() {
         onCancel={rewardedHint.cancelAd}
       />
 
-      {completed && isSuccessVisible ? (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-[2rem] border border-emerald-300/20 bg-slate-950/95 p-6 text-center shadow-[0_24px_100px_rgba(2,8,24,0.55)]">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-200">
-              <CheckCircle2 className="h-7 w-7" />
-            </div>
-            <h2 className="mt-5 font-display text-3xl font-semibold text-white">
-              Puzzle complete
-            </h2>
-            <p className="mt-3 text-sm leading-7 text-slate-300">
-              Nice work. You solved this {difficultyConfig.label.toLowerCase()} puzzle and completed this focus session with
-              <span className="font-semibold text-white"> {mistakes} </span>
-              mistakes.
-            </p>
-            <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4 text-left">
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Score estimate</p>
-              <p className="mt-2 font-display text-3xl font-semibold text-white">{scoreEstimate}</p>
-              <p className="mt-2 text-sm text-slate-300">
-                Based on difficulty, mistakes, and hints used. Saved games also update your XP.
-              </p>
+      <GameResultModal
+        isOpen={isGameOver && isSuccessVisible}
+        status={isWon ? 'won' : 'lost'}
+        badgeLabel={isWon ? 'Victory unlocked' : 'Session ended'}
+        title={isWon ? 'Congratulations — you won!' : 'Game Over'}
+        subtitle={isWon
+          ? 'Great focus. You solved this puzzle and locked in a real score.'
+          : 'You made 3 mistakes. Start a new puzzle or reset this one to try again.'}
+        difficultyLabel={difficultyConfig.label}
+        formattedTime={formattedTime}
+        mistakes={mistakes}
+        hintsUsed={hintsUsed}
+        score={isWon ? scoreEstimate : undefined}
+        xpGained={isWon ? xpEstimate : undefined}
+        extraContent={isWon ? (
+          <>
+            <div className="grid gap-3">
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={() => void handleSaveProgress()}
+                  disabled={saveLoading || savedSessionId === sessionId}
+                  className="rounded-2xl border border-cyan-300/25 bg-cyan-400/10 px-4 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/16 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {saveLoading
+                    ? 'Saving progress...'
+                    : savedSessionId === sessionId
+                      ? 'Progress saved'
+                      : 'Save Progress'}
+                </button>
+              ) : (
+                <Link
+                  to={buildAuthRedirectPath('/game')}
+                  className="rounded-2xl border border-cyan-300/25 bg-cyan-400/10 px-4 py-3 text-center text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/16"
+                >
+                  Sign in to save progress
+                </Link>
+              )}
 
-              <div className="mt-4 grid gap-3">
-                {isAuthenticated ? (
-                  <button
-                    type="button"
-                    onClick={() => void handleSaveProgress()}
-                    disabled={saveLoading || savedSessionId === sessionId}
-                    className="rounded-2xl border border-cyan-300/25 bg-cyan-400/10 px-4 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/16 disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {saveLoading
-                      ? 'Saving progress...'
-                      : savedSessionId === sessionId
-                        ? 'Progress saved'
-                        : 'Save Progress'}
-                  </button>
-                ) : (
-                  <Link
-                    to={buildAuthRedirectPath('/game')}
-                    className="rounded-2xl border border-cyan-300/25 bg-cyan-400/10 px-4 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/16"
-                  >
-                    Sign in to save progress
-                  </Link>
-                )}
-
-                {saveState ? (
-                  <div className={`rounded-2xl border px-4 py-3 text-sm ${
-                    saveState.ok
-                      ? 'border-emerald-300/20 bg-emerald-400/10 text-emerald-100'
-                      : 'border-amber-300/20 bg-amber-400/10 text-amber-50'
-                  }`}>
-                    {saveState.message}
-                    {saveState.ok ? ` Score saved: ${saveState.score}.` : ''}
-                  </div>
-                ) : null}
-              </div>
+              {saveState ? (
+                <div className={`rounded-2xl border px-4 py-3 text-sm ${
+                  saveState.ok
+                    ? 'border-emerald-300/20 bg-emerald-400/10 text-emerald-100'
+                    : 'border-amber-300/20 bg-amber-400/10 text-amber-50'
+                }`}>
+                  {saveState.message}
+                  {saveState.ok ? ` Score saved: ${saveState.score}.` : ''}
+                </div>
+              ) : null}
             </div>
+
             <ShareResultCard
               mode="game"
               difficulty={difficulty}
@@ -280,28 +289,37 @@ export function GamePage() {
               url={shareUrl}
               className="mt-5 text-left"
             />
-            <div className="mt-6 grid gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSuccessVisible(false)
-                  resetGame()
-                }}
-                className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-50"
-              >
-                Play Again
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsSuccessVisible(false)}
-                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-              >
-                Close
-              </button>
-            </div>
+          </>
+        ) : (
+          <div className="rounded-2xl border border-amber-300/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-50">
+            Start a new game to earn points and leaderboard progress.
           </div>
-        </div>
-      ) : null}
+        )}
+        actions={(
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => {
+                setIsSuccessVisible(false)
+                resetGame()
+              }}
+              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-50"
+            >
+              Try Again
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsSuccessVisible(false)
+                startNewGame(difficulty)
+              }}
+              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+            >
+              New Game
+            </button>
+          </div>
+        )}
+      />
     </>
   )
 }

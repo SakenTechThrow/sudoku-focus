@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { MAX_MISTAKES } from '../constants/game'
 import { isDifficulty } from '../constants/difficulty'
 import { useAuth } from './useAuth'
 import { createEmptyBoard, generatePuzzle } from '../lib/sudokuGenerator'
 import { calculateScore } from '../lib/scoring'
 import { supabase, supabaseConfigError } from '../lib/supabaseClient'
+import { withTimeout } from '../lib/withTimeout'
 import {
   findConflictingCells,
   isBoardComplete,
@@ -13,6 +15,8 @@ import type {
   CandidateValue,
   CellPosition,
   CheckResult,
+  GameStatus,
+  LastMove,
   NotesBoard,
   SudokuBoard,
 } from '../types/sudoku'
@@ -349,6 +353,10 @@ function getDisplayName(email: string | null | undefined, username: string | nul
   return username?.trim() || email?.split('@')[0] || 'Sudoku Focus Player'
 }
 
+function isRacePlayerFailed(player: Pick<OnlineRoomPlayer, 'completed' | 'mistakes' | 'score' | 'finishedAt'>) {
+  return !player.completed && Boolean(player.finishedAt) && player.mistakes >= MAX_MISTAKES && player.score === 0
+}
+
 function toRoomRow(room: OnlineRoom): OnlineRoomRow {
   return {
     id: room.id,
@@ -404,6 +412,8 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
   const [notesMode, setNotesMode] = useState(false)
   const [mistakes, setMistakes] = useState(0)
   const [hintsUsed, setHintsUsed] = useState(0)
+  const [lastMove, setLastMove] = useState<LastMove | null>(null)
+  const [gameStatus, setGameStatus] = useState<GameStatus>('playing')
   const [completed, setCompleted] = useState(false)
   const [checkResult, setCheckResult] = useState<CheckResult | null>(null)
   const [seconds, setSeconds] = useState(0)
@@ -435,6 +445,9 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     () => createFixedCells(room?.puzzle ?? EMPTY_BOARD),
     [room?.puzzle],
   )
+  const isGameOver = gameStatus !== 'playing'
+  const mistakeLimit = MAX_MISTAKES
+  const mistakesRemaining = Math.max(0, mistakeLimit - mistakes)
   const selectedValue = selectedCell ? localBoard[selectedCell.row][selectedCell.col] : 0
   const selectedNotes = selectedCell ? notes[selectedCell.row][selectedCell.col] : []
   const invalidCellKeys = useMemo(
@@ -443,8 +456,15 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
   )
   const standings = useMemo(
     () => [...players].sort((left, right) => {
+      const leftFailed = isRacePlayerFailed(left)
+      const rightFailed = isRacePlayerFailed(right)
+
       if (left.completed !== right.completed) {
         return Number(right.completed) - Number(left.completed)
+      }
+
+      if (leftFailed !== rightFailed) {
+        return Number(leftFailed) - Number(rightFailed)
       }
 
       if (left.score !== right.score) {
@@ -469,7 +489,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     && room
     && currentPlayer
     && room.status === 'active'
-    && !completed,
+    && !isGameOver,
   )
   const formattedTime = useMemo(() => {
     const minutes = Math.floor(seconds / 60)
@@ -482,11 +502,16 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
       throw new Error(supabaseConfigError ?? 'Supabase is not configured.')
     }
 
-    const { data, error: roomError } = await supabase
-      .from('online_rooms')
-      .select('id, host_user_id, room_code, mode, difficulty, puzzle, solution, shared_board, board, status, winner_user_id, created_at')
-      .eq('room_code', targetRoomCode)
-      .maybeSingle()
+    const { data, error: roomError } = await withTimeout(
+      Promise.resolve(
+        supabase
+          .from('online_rooms')
+          .select('id, host_user_id, room_code, mode, difficulty, puzzle, solution, shared_board, board, status, winner_user_id, created_at')
+          .eq('room_code', targetRoomCode)
+          .maybeSingle(),
+      ),
+      12000,
+    )
 
     if (roomError) {
       throw roomError
@@ -510,10 +535,16 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
         .eq('room_id', roomId)
         .order(timestampColumn, { ascending: true })
 
-    let { data, error: playersError } = await selectPlayers('created_at')
+    let { data, error: playersError } = await withTimeout(
+      selectPlayers('created_at'),
+      12000,
+    )
 
     if (playersError && isOnlineRoomPlayerTimestampSchemaError(playersError)) {
-      const fallbackResult = await selectPlayers('joined_at')
+      const fallbackResult = await withTimeout(
+        selectPlayers('joined_at'),
+        12000,
+      )
       data = fallbackResult.data
       playersError = fallbackResult.error
     }
@@ -539,6 +570,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     const nextPlayers = await fetchPlayersByRoomId(loadedRoom.id)
     setRoom(loadedRoom)
     setPlayers(nextPlayers)
+    setLocalBoard(cloneBoard(loadedRoom.mode === 'collaborative' ? loadedRoom.sharedBoard : loadedRoom.puzzle))
     setError(null)
     return loadedRoom
   }, [fetchPlayersByRoomId, fetchRoomByCode])
@@ -622,6 +654,44 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     }
   }, [fetchPlayersByRoomId, profile?.city, profile?.username, user])
 
+  const initializeRacePersonalBoard = useCallback(async () => {
+    if (!room || room.mode !== 'race' || !supabase || !user) {
+      return
+    }
+
+    if (!currentPlayer) {
+      await ensurePlayerMembership(room)
+      return
+    }
+
+    if (currentPlayer.personalBoard) {
+      return
+    }
+
+    if (import.meta.env.DEV) {
+      console.log('Initializing personal_board for race player')
+    }
+
+    const nextBoard = cloneBoard(room.puzzle)
+    setPlayers((currentPlayers) =>
+      currentPlayers.map((player) =>
+        player.id === currentPlayer.id
+          ? { ...player, personalBoard: nextBoard }
+          : player,
+      ),
+    )
+    setLocalBoard(nextBoard)
+
+    const { error: initializeError } = await supabase
+      .from('online_room_players')
+      .update({ personal_board: nextBoard })
+      .eq('id', currentPlayer.id)
+
+    if (initializeError) {
+      throw initializeError
+    }
+  }, [currentPlayer, ensurePlayerMembership, room, user])
+
   const refetch = useCallback(async () => {
     if (!normalizedRoomCode || !isEnabled) {
       return
@@ -630,9 +700,12 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     setLoading(true)
 
     try {
-      await loadRoomState(normalizedRoomCode)
+      await withTimeout(
+        loadRoomState(normalizedRoomCode),
+        15000,
+      )
     } catch (refetchError) {
-      setError(getErrorMessage(refetchError, 'Unable to load this room right now.'))
+      setError(getErrorMessage(refetchError, 'Could not connect to Supabase. Please try again.'))
     } finally {
       setLoading(false)
     }
@@ -653,72 +726,74 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     setActionLoading(true)
 
     try {
-      const generatedPuzzle = generatePuzzle(difficulty)
-      const displayName = getDisplayName(user.email, profile?.username)
-      const city = profile?.city ?? 'Almaty'
+      return await withTimeout((async (): Promise<ActionResult> => {
+        const generatedPuzzle = generatePuzzle(difficulty)
+        const displayName = getDisplayName(user.email, profile?.username)
+        const city = profile?.city ?? 'Almaty'
 
-      for (let attempt = 0; attempt < 5; attempt += 1) {
-        const nextRoomCode = generateRoomCode()
-        const roomInsert: Record<string, unknown> = {
-          host_user_id: user.id,
-          room_code: nextRoomCode,
-          mode,
-          difficulty,
-          puzzle: generatedPuzzle.puzzle,
-          solution: generatedPuzzle.solution,
-          shared_board: generatedPuzzle.puzzle,
-          board: generatedPuzzle.puzzle,
-          status: 'active',
-        }
-        const { data: roomData, error: roomError } = await supabase
-          .from('online_rooms')
-          .insert(roomInsert)
-          .select('id, room_code')
-          .single()
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+          const nextRoomCode = generateRoomCode()
+          const roomInsert: Record<string, unknown> = {
+            host_user_id: user.id,
+            room_code: nextRoomCode,
+            mode,
+            difficulty,
+            puzzle: generatedPuzzle.puzzle,
+            solution: generatedPuzzle.solution,
+            shared_board: generatedPuzzle.puzzle,
+            board: generatedPuzzle.puzzle,
+            status: 'active',
+          }
+          const { data: roomData, error: roomError } = await supabase
+            .from('online_rooms')
+            .insert(roomInsert)
+            .select('id, room_code')
+            .single()
 
-        if (roomError) {
-          const duplicateCode = typeof roomError === 'object'
-            && roomError !== null
-            && 'code' in roomError
-            && roomError.code === '23505'
+          if (roomError) {
+            const duplicateCode = typeof roomError === 'object'
+              && roomError !== null
+              && 'code' in roomError
+              && roomError.code === '23505'
 
-          if (duplicateCode) {
-            continue
+            if (duplicateCode) {
+              continue
+            }
+
+            throw roomError
           }
 
-          throw roomError
+          const { error: playerError } = await supabase
+            .from('online_room_players')
+            .upsert(
+              {
+                room_id: roomData.id,
+                user_id: user.id,
+                display_name: displayName,
+                city,
+                personal_board: generatedPuzzle.puzzle,
+                completed: false,
+                time_seconds: 0,
+                mistakes: 0,
+                hints_used: 0,
+                score: 0,
+              },
+              { onConflict: 'room_id,user_id' },
+            )
+
+          if (playerError) {
+            throw playerError
+          }
+
+          return { ok: true, roomCode: roomData.room_code }
         }
 
-        const { error: playerError } = await supabase
-          .from('online_room_players')
-          .upsert(
-            {
-              room_id: roomData.id,
-              user_id: user.id,
-              display_name: displayName,
-              city,
-              personal_board: generatedPuzzle.puzzle,
-              completed: false,
-              time_seconds: 0,
-              mistakes: 0,
-              hints_used: 0,
-              score: 0,
-            },
-            { onConflict: 'room_id,user_id' },
-          )
-
-        if (playerError) {
-          throw playerError
-        }
-
-        return { ok: true, roomCode: roomData.room_code }
-      }
-
-      return { ok: false, message: 'Could not generate a unique room code. Please try again.' }
+        return { ok: false, message: 'Could not generate a unique room code. Please try again.' }
+      })(), 15000)
     } catch (createRoomError) {
       return {
         ok: false,
-        message: getErrorMessage(createRoomError, 'Unable to create an online room right now.'),
+        message: getErrorMessage(createRoomError, 'Could not create the room. Please try again.'),
       }
     } finally {
       setActionLoading(false)
@@ -735,21 +810,23 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     setActionLoading(true)
 
     try {
-      const targetRoom = await fetchRoomByCode(targetRoomCode)
+      return await withTimeout((async (): Promise<ActionResult> => {
+        const targetRoom = await fetchRoomByCode(targetRoomCode)
 
-      if (!targetRoom) {
-        return { ok: false, message: ROOM_NOT_FOUND_MESSAGE }
-      }
+        if (!targetRoom) {
+          return { ok: false, message: ROOM_NOT_FOUND_MESSAGE }
+        }
 
-      if (user) {
-        await ensurePlayerMembership(targetRoom)
-      }
+        if (user) {
+          await ensurePlayerMembership(targetRoom)
+        }
 
-      return { ok: true, roomCode: targetRoomCode }
+        return { ok: true, roomCode: targetRoomCode }
+      })(), 15000)
     } catch (joinRoomError) {
       return {
         ok: false,
-        message: getErrorMessage(joinRoomError, 'Unable to join this room right now.'),
+        message: getErrorMessage(joinRoomError, 'Could not join this room. Please try again.'),
       }
     } finally {
       setActionLoading(false)
@@ -788,6 +865,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
       timeSeconds: seconds,
       mistakes: nextMistakes,
       hintsUsed: nextHintsUsed,
+      status: 'won',
     })
 
     await updateCurrentPlayer({
@@ -813,6 +891,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     }
 
     setCompleted(true)
+    setGameStatus('won')
     setCheckResult({
       status: 'solved',
       message: 'Puzzle solved. Your race result is now live.',
@@ -820,6 +899,34 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     setIsTimerRunning(false)
     return score
   }, [currentPlayer, room, seconds, updateCurrentPlayer, user])
+
+  const failRace = useCallback(async (
+    nextBoard: SudokuBoard,
+    nextMistakes: number,
+    nextHintsUsed: number,
+  ) => {
+    if (!room || room.mode !== 'race') {
+      return
+    }
+
+    await updateCurrentPlayer({
+      personal_board: nextBoard,
+      completed: false,
+      time_seconds: seconds,
+      mistakes: nextMistakes,
+      hints_used: nextHintsUsed,
+      score: 0,
+      finished_at: new Date().toISOString(),
+    })
+
+    setCompleted(false)
+    setGameStatus('lost')
+    setCheckResult({
+      status: 'incorrect',
+      message: 'Game over. You used all 3 mistakes in this race.',
+    })
+    setIsTimerRunning(false)
+  }, [room, seconds, updateCurrentPlayer])
 
   const updateSharedBoard = useCallback(async (nextBoard: SudokuBoard) => {
     if (!supabase || !room || room.mode !== 'collaborative') {
@@ -864,6 +971,10 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
   }
 
   function selectCell(row: number, col: number) {
+    if (!canEdit) {
+      return
+    }
+
     setSelectedCell({ row, col })
   }
 
@@ -915,12 +1026,19 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     const nextBoard = cloneBoard(localBoard)
     const nextNotes = cloneNotesBoard(notes)
     const nextMistakes = value !== room.solution[row][col] ? mistakes + 1 : mistakes
+    const nextMove: LastMove = {
+      row,
+      col,
+      value,
+      status: value === room.solution[row][col] ? 'correct' : 'wrong',
+    }
     nextBoard[row][col] = value
     nextNotes[row][col] = []
 
     setLocalBoard(nextBoard)
     setNotes(nextNotes)
     setMistakes(nextMistakes)
+    setLastMove(nextMove)
     clearCheckResult()
 
     try {
@@ -935,8 +1053,20 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
         setSyncStatus('connected')
         setError(null)
 
+        if (nextMistakes >= MAX_MISTAKES) {
+          setCompleted(false)
+          setGameStatus('lost')
+          setCheckResult({
+            status: 'incorrect',
+            message: 'Game over. You used all 3 mistakes in this room.',
+          })
+          setIsTimerRunning(false)
+          return
+        }
+
         if (isSolved(nextBoard, room.solution)) {
           setCompleted(true)
+          setGameStatus('won')
           setCheckResult({
             status: 'solved',
             message: 'Room solved! Great teamwork.',
@@ -944,6 +1074,11 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
           setIsTimerRunning(false)
         }
       } else {
+        if (nextMistakes >= MAX_MISTAKES) {
+          await failRace(nextBoard, nextMistakes, hintsUsed)
+          return
+        }
+
         await persistRaceState(nextBoard, nextMistakes, hintsUsed)
 
         if (isSolved(nextBoard, room.solution)) {
@@ -962,6 +1097,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
   }, [
     applyCollaborativeBoardLocally,
     canEdit,
+    failRace,
     finishRace,
     fixedCells,
     hintsUsed,
@@ -991,6 +1127,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     nextBoard[row][col] = 0
 
     setLocalBoard(nextBoard)
+    setLastMove(null)
     clearCheckResult()
 
     try {
@@ -1051,6 +1188,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
         setNotes(nextNotes)
         setHintsUsed(nextHintsUsed)
         setSelectedCell({ row, col })
+        setLastMove(null)
         clearCheckResult()
 
         try {
@@ -1071,6 +1209,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
 
             if (isSolved(nextBoard, room.solution)) {
               setCompleted(true)
+              setGameStatus('won')
               setCheckResult({
                 status: 'solved',
                 message: 'Room solved! Great teamwork.',
@@ -1125,6 +1264,31 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
       return result
     }
 
+    if (gameStatus === 'lost') {
+      const result: CheckResult = {
+        status: 'incorrect',
+        message: 'Game over. Start again to keep racing.',
+      }
+
+      setCheckResult(result)
+      return result
+    }
+
+    if (gameStatus === 'won') {
+      const result: CheckResult = room.mode === 'collaborative'
+        ? {
+            status: 'solved',
+            message: 'Room solved! Great teamwork.',
+          }
+        : {
+            status: 'solved',
+            message: 'Puzzle solved. Your race result is now live.',
+          }
+
+      setCheckResult(result)
+      return result
+    }
+
     if (!isBoardComplete(localBoard)) {
       const result: CheckResult = {
         status: 'incomplete',
@@ -1158,6 +1322,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
         }
 
     setCompleted(true)
+    setGameStatus('won')
     setCheckResult(result)
     setIsTimerRunning(false)
 
@@ -1172,7 +1337,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     }
 
     return result
-  }, [finishRace, hintsUsed, localBoard, mistakes, room, updateSharedBoard])
+  }, [finishRace, gameStatus, hintsUsed, localBoard, mistakes, room, updateSharedBoard])
 
   const resetBoard = useCallback(async () => {
     if (!room || room.mode !== 'race' || !currentPlayer) {
@@ -1186,6 +1351,8 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     setNotesMode(false)
     setMistakes(0)
     setHintsUsed(0)
+    setLastMove(null)
+    setGameStatus('playing')
     setCompleted(false)
     setCheckResult(null)
     setSeconds(0)
@@ -1338,6 +1505,27 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
   }, [ensurePlayerMembership, isAuthenticated, isEnabled, room, user])
 
   useEffect(() => {
+    if (room?.mode !== 'race') {
+      return
+    }
+
+    if (import.meta.env.DEV) {
+      console.log('Race mode current player:', currentPlayer)
+      console.log('Race mode board source:', boardSource)
+    }
+  }, [boardSource, currentPlayer, room?.mode])
+
+  useEffect(() => {
+    if (!room || room.mode !== 'race' || !isAuthenticated || !user) {
+      return
+    }
+
+    void initializeRacePersonalBoard().catch((initializeError) => {
+      setError(getErrorMessage(initializeError, 'Could not prepare your race board. Please refresh or try again.'))
+    })
+  }, [initializeRacePersonalBoard, isAuthenticated, room, user])
+
+  useEffect(() => {
     if (remoteBoardKey === syncedBoardKeyRef.current) {
       return
     }
@@ -1357,6 +1545,8 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
       setNotesMode(false)
       setMistakes(0)
       setHintsUsed(0)
+      setLastMove(null)
+      setGameStatus('playing')
       setCompleted(false)
       setCheckResult(null)
       setSeconds(0)
@@ -1367,6 +1557,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     setNotes(createEmptyNotesBoard())
     setSelectedCell(null)
     setNotesMode(false)
+    setLastMove(null)
     setCheckResult(null)
 
     if (room.mode === 'race') {
@@ -1374,6 +1565,13 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
       setHintsUsed(currentPlayer?.hintsUsed ?? 0)
       setCompleted(currentPlayer?.completed ?? false)
       setSeconds(currentPlayer?.timeSeconds ?? 0)
+      setGameStatus(
+        currentPlayer?.completed
+          ? 'won'
+          : currentPlayer && isRacePlayerFailed(currentPlayer)
+            ? 'lost'
+            : 'playing',
+      )
       return
     }
 
@@ -1381,6 +1579,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     setMistakes(0)
     setHintsUsed(0)
     setCompleted(roomSolved)
+    setGameStatus(roomSolved ? 'won' : 'playing')
     setSeconds(0)
   }, [currentPlayer?.id, room?.id, room?.mode]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1392,15 +1591,16 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     if (room.mode === 'collaborative') {
       const roomSolved = room.status === 'completed' || isSolved(localBoard, room.solution)
 
-      if (roomSolved) {
+      if (roomSolved && gameStatus !== 'lost') {
         setCompleted(true)
+        setGameStatus('won')
         setCheckResult((current) => current ?? {
           status: 'solved',
           message: 'Room solved! Great teamwork.',
         })
       }
     }
-  }, [localBoard, room])
+  }, [gameStatus, localBoard, room])
 
   useEffect(() => {
     if (room?.mode !== 'race' || !currentPlayer) {
@@ -1409,6 +1609,16 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
 
     if (currentPlayer.completed) {
       setCompleted(true)
+      setGameStatus('won')
+      setSeconds(currentPlayer.timeSeconds)
+      setMistakes(currentPlayer.mistakes)
+      setHintsUsed(currentPlayer.hintsUsed)
+      return
+    }
+
+    if (isRacePlayerFailed(currentPlayer)) {
+      setCompleted(false)
+      setGameStatus('lost')
       setSeconds(currentPlayer.timeSeconds)
       setMistakes(currentPlayer.mistakes)
       setHintsUsed(currentPlayer.hintsUsed)
@@ -1424,11 +1634,11 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
       && room.status === 'active'
       && isAuthenticated
       && currentPlayer
-      && !completed,
+      && !isGameOver,
     )
 
     setIsTimerRunning(shouldRun)
-  }, [completed, currentPlayer, isAuthenticated, room])
+  }, [currentPlayer, isAuthenticated, isGameOver, room])
 
   useEffect(() => {
     if (!isTimerRunning) {
@@ -1458,6 +1668,18 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     })
   }, [completed, currentPlayer, hintsUsed, localBoard, mistakes, persistRaceState, room?.mode, seconds])
 
+  useEffect(() => {
+    if (!lastMove) {
+      return undefined
+    }
+
+    const timeout = window.setTimeout(() => {
+      setLastMove(null)
+    }, 950)
+
+    return () => window.clearTimeout(timeout)
+  }, [lastMove])
+
   const solution = room?.solution ?? EMPTY_BOARD
 
   return {
@@ -1481,7 +1703,12 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     selectedValue,
     selectedNotes,
     mistakes,
+    mistakesRemaining,
+    mistakeLimit,
     hintsUsed,
+    lastMove,
+    status: gameStatus,
+    isGameOver,
     completed,
     checkResult,
     invalidCellKeys,

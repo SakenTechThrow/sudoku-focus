@@ -5,6 +5,7 @@ import { NFactorialRewardedAdModal } from '../components/ads/NFactorialRewardedA
 import { NumberPad } from '../components/board/NumberPad'
 import { SudokuBoard } from '../components/board/SudokuBoard'
 import { AICoachPanel } from '../components/coach/AICoachPanel'
+import { GameResultModal } from '../components/game/GameResultModal'
 import { GameSessionHeader } from '../components/game/GameSessionHeader'
 import { difficultyConfig } from '../constants/difficulty'
 import { useAICoach } from '../hooks/useAICoach'
@@ -12,6 +13,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useOnlineRoom } from '../hooks/useOnlineRoom'
 import { useRewardedHint } from '../hooks/useRewardedHint'
 import { buildAuthRedirectPath } from '../lib/authRedirect'
+import { calculateScore } from '../lib/scoring'
 import { cn } from '../lib/utils'
 
 function formatOnlineMode(mode: 'collaborative' | 'race') {
@@ -43,6 +45,15 @@ function formatJoinedTime(timestamp: string | null | undefined) {
   }).format(date)
 }
 
+function isFailedRacePlayer(player: {
+  completed: boolean
+  mistakes: number
+  score: number
+  finishedAt: string | null
+}) {
+  return !player.completed && Boolean(player.finishedAt) && player.mistakes >= 3 && player.score === 0
+}
+
 export function OnlineRoomPage() {
   const { roomCode } = useParams<{ roomCode: string }>()
   const location = useLocation()
@@ -68,8 +79,11 @@ export function OnlineRoomPage() {
     selectedValue,
     selectedNotes,
     mistakes,
+    mistakeLimit,
     hintsUsed,
-    completed,
+    lastMove,
+    status,
+    isGameOver,
     checkResult,
     invalidCellKeys,
     formattedTime,
@@ -93,6 +107,7 @@ export function OnlineRoomPage() {
   const rewardedHint = useRewardedHint({
     hintsUsed,
     revealHint,
+    disabled: isGameOver,
   })
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null)
   const selectedCellFixed = selectedCell
@@ -182,7 +197,7 @@ export function OnlineRoomPage() {
 
   const difficultyMeta = difficultyConfig[room.difficulty]
   const editingLocked = !canEdit
-  const numberPadCompleted = editingLocked || completed
+  const numberPadCompleted = editingLocked || isGameOver
   const syncBadgeClasses = syncStatus === 'error'
     ? 'border-rose-200 bg-rose-100/85 text-rose-950 dark:border-rose-300/20 dark:bg-rose-400/10 dark:text-rose-100'
     : syncStatus === 'syncing'
@@ -193,6 +208,15 @@ export function OnlineRoomPage() {
     : syncStatus === 'syncing'
       ? 'Syncing...'
       : 'Live sync connected'
+  const raceScore = room.mode === 'race'
+    ? calculateScore({
+        difficulty: room.difficulty,
+        timeSeconds: Math.max(0, currentPlayer?.timeSeconds ?? 0),
+        mistakes,
+        hintsUsed,
+        status,
+      })
+    : 0
 
   return (
     <div className="space-y-3 lg:space-y-4">
@@ -201,12 +225,13 @@ export function OnlineRoomPage() {
         difficultyLabel={difficultyMeta.label}
         difficultyDescription={difficultyMeta.description}
         cellsToRemove={difficultyMeta.cellsToRemove}
-        mistakeLimit={difficultyMeta.mistakeLimit}
+        mistakeLimit={mistakeLimit}
         formattedTime={formattedTime}
         mistakes={mistakes}
         hintsUsed={hintsUsed}
         notesMode={notesMode}
         isPaused={false}
+        status={status}
         eyebrow="Online"
         title={room.mode === 'collaborative' ? 'Collaborative room' : 'Race room'}
         description={roomDescription}
@@ -299,7 +324,9 @@ export function OnlineRoomPage() {
       ) : membershipLoading && !currentPlayer ? (
         <section className="rounded-[2rem] border border-cyan-200 bg-cyan-100/85 p-5 dark:border-cyan-300/20 dark:bg-cyan-400/10">
           <p className="text-sm leading-7 text-cyan-950 dark:text-cyan-100">
-            Joining the room and syncing your board...
+            {room.mode === 'race'
+              ? 'Joining race room and preparing your personal board...'
+              : 'Joining the room and syncing your board...'}
           </p>
         </section>
       ) : null}
@@ -315,7 +342,7 @@ export function OnlineRoomPage() {
                 <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-300">
                   {room.mode === 'collaborative'
                     ? 'Every move updates the same room board for everyone.'
-                    : 'This board is private to you while standings update live for the room.'}
+                    : 'Everyone solves the same puzzle separately. Your moves do not change other players\' boards.'}
                 </p>
               </div>
               <button
@@ -330,11 +357,15 @@ export function OnlineRoomPage() {
             <div className="mt-4 flex justify-center">
               <SudokuBoard
                 board={board}
+                solution={solution}
                 notes={notes}
                 fixedCells={fixedCells}
                 selectedCell={selectedCell}
+                lastMove={lastMove}
                 invalidCellKeys={invalidCellKeys}
                 isPaused={false}
+                isInteractionLocked={!canEdit}
+                celebrate={status === 'won' || room.status === 'completed'}
                 onSelectCell={selectCell}
               />
             </div>
@@ -438,13 +469,19 @@ export function OnlineRoomPage() {
                 </p>
               ) : !currentPlayer ? (
                 <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
-                  Joining the room so your board can sync...
+                  {room.mode === 'race'
+                    ? 'Joining race room... Your board will start from the shared puzzle and stay private to you.'
+                    : 'Joining the room so your board can sync...'}
                 </p>
               ) : (
                 <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
-                  {room.mode === 'collaborative'
-                    ? 'Every correct shared move helps the whole room finish faster.'
-                    : 'Your personal board and standings update live while everyone else races on the same puzzle.'}
+                  {status === 'lost'
+                    ? room.mode === 'collaborative'
+                      ? 'You used all 3 mistakes in this room. Your board is locked locally while teammates can keep solving.'
+                      : 'Game over for this race board. Reset your board to practice again, or watch the standings live.'
+                    : room.mode === 'collaborative'
+                      ? 'Every correct shared move helps the whole room finish faster.'
+                      : 'Your personal board updates separately while standings show everyone else racing on the same puzzle.'}
                 </p>
               )}
             </div>
@@ -512,10 +549,12 @@ export function OnlineRoomPage() {
                     'rounded-full px-3 py-1 text-xs font-medium',
                     player.completed
                       ? 'bg-emerald-100/85 text-emerald-950 dark:bg-emerald-400/10 dark:text-emerald-100'
-                      : 'bg-slate-200 text-slate-700 dark:bg-white/8 dark:text-slate-300',
+                      : isFailedRacePlayer(player)
+                        ? 'bg-rose-100/85 text-rose-950 dark:bg-rose-400/10 dark:text-rose-100'
+                        : 'bg-slate-200 text-slate-700 dark:bg-white/8 dark:text-slate-300',
                   )}
                   >
-                    {player.completed ? 'Finished' : 'Solving'}
+                    {player.completed ? 'Finished' : isFailedRacePlayer(player) ? 'Failed' : 'Solving'}
                   </span>
                 </div>
 
@@ -551,6 +590,20 @@ export function OnlineRoomPage() {
           </h2>
           <p className="mt-3 text-sm leading-7 text-emerald-950 dark:text-emerald-50">
             Everyone in this collaborative room is now looking at the completed shared board.
+          </p>
+        </section>
+      ) : null}
+
+      {status === 'lost' && room.mode === 'collaborative' ? (
+        <section className="rounded-[1.8rem] border border-rose-200 bg-rose-100/85 p-5 dark:border-rose-300/20 dark:bg-rose-400/10">
+          <h2 className="font-display text-2xl font-semibold text-slate-950 dark:text-white">Game over</h2>
+          <p className="mt-3 text-sm leading-7 text-rose-950 dark:text-rose-50">
+            You used all {mistakeLimit} mistakes.
+            {' '}
+            Your local input is locked, but the shared room remains live for everyone else.
+          </p>
+          <p className="mt-4 text-sm font-medium text-rose-950 dark:text-rose-100">
+            Mistake limit reached. The board is now view-only for you.
           </p>
         </section>
       ) : null}
@@ -594,10 +647,12 @@ export function OnlineRoomPage() {
                     'rounded-full px-3 py-1 text-xs font-medium',
                     player.completed
                       ? 'bg-emerald-100/85 text-emerald-950 dark:bg-emerald-400/10 dark:text-emerald-100'
-                      : 'bg-slate-200 text-slate-700 dark:bg-white/8 dark:text-slate-300',
+                      : isFailedRacePlayer(player)
+                        ? 'bg-rose-100/85 text-rose-950 dark:bg-rose-400/10 dark:text-rose-100'
+                        : 'bg-slate-200 text-slate-700 dark:bg-white/8 dark:text-slate-300',
                   )}
                   >
-                    {player.completed ? 'Done' : 'Live'}
+                    {player.completed ? 'Done' : isFailedRacePlayer(player) ? 'Game over' : 'Live'}
                   </span>
                 </div>
               </div>
@@ -610,6 +665,38 @@ export function OnlineRoomPage() {
         isOpen={rewardedHint.isAdOpen}
         onConfirm={rewardedHint.confirmAdAndRevealHint}
         onCancel={rewardedHint.cancelAd}
+      />
+
+      <GameResultModal
+        isOpen={room.mode === 'race' && isGameOver}
+        status={status === 'won' ? 'won' : 'lost'}
+        badgeLabel={status === 'won' ? 'Race result locked in' : 'Race board ended'}
+        title={status === 'won' ? 'You finished!' : 'Race Game Over'}
+        subtitle={status === 'won'
+          ? 'Strong solve. Your result is now live in the race standings.'
+          : 'You used all 3 mistakes. Your race board is locked, but you can reset and practice the same puzzle again.'}
+        difficultyLabel={difficultyMeta.label}
+        formattedTime={formattedTime}
+        mistakes={mistakes}
+        hintsUsed={hintsUsed}
+        score={status === 'won' ? raceScore : undefined}
+        actions={(
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => void resetBoard()}
+              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-50"
+            >
+              {status === 'won' ? 'Race Again' : 'Try Race Again'}
+            </button>
+            <Link
+              to="/online"
+              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10"
+            >
+              Back to Online
+            </Link>
+          </div>
+        )}
       />
     </div>
   )

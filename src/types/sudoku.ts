@@ -13,6 +13,13 @@ export type CellPosition = {
   col: number
 }
 
+export type MoveStatus = 'correct' | 'wrong'
+
+export type LastMove = CellPosition & {
+  value: CandidateValue
+  status: MoveStatus
+}
+
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'expert'
 
 export type GeneratedPuzzle = {
@@ -35,6 +42,8 @@ export type CheckResult = {
   message: string
 }
 
+export type GameStatus = 'playing' | 'won' | 'lost'
+
 export type PersistedSudokuGameState = {
   difficulty: Difficulty
   puzzle: SudokuBoard
@@ -45,5 +54,6 @@ export type PersistedSudokuGameState = {
   hintsUsed: number
   seconds: number
   completed: boolean
+  status: GameStatus
   notesMode: boolean
 }

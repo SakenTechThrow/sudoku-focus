@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { isDifficulty } from '../constants/difficulty'
 import { supabase, supabaseConfigError } from '../lib/supabaseClient'
 import { generatePuzzle } from '../lib/sudokuGenerator'
+import { withTimeout } from '../lib/withTimeout'
 import type { DailyChallenge, SudokuBoard } from '../types/sudoku'
 
 type DailyChallengeRow = {
@@ -115,7 +116,10 @@ export function useDailyChallenge() {
 
     async function loadChallenge() {
       try {
-        const existingChallenge = await selectChallenge()
+        const existingChallenge = await withTimeout(
+          selectChallenge(),
+          15000,
+        )
 
         if (existingChallenge) {
           if (isMounted) {
@@ -125,12 +129,17 @@ export function useDailyChallenge() {
         }
 
         const generatedChallenge = generatePuzzle('medium')
-        const { error: insertError } = await client.from('daily_challenges').insert({
-          challenge_date: challengeDate,
-          difficulty: generatedChallenge.difficulty,
-          puzzle: generatedChallenge.puzzle,
-          solution: generatedChallenge.solution,
-        })
+        const { error: insertError } = await withTimeout(
+          Promise.resolve(
+            client.from('daily_challenges').insert({
+              challenge_date: challengeDate,
+              difficulty: generatedChallenge.difficulty,
+              puzzle: generatedChallenge.puzzle,
+              solution: generatedChallenge.solution,
+            }),
+          ),
+          15000,
+        )
 
         if (insertError) {
           const candidateError = insertError as SupabaseLikeError
@@ -140,7 +149,10 @@ export function useDailyChallenge() {
           }
         }
 
-        const createdChallenge = await selectChallenge()
+        const createdChallenge = await withTimeout(
+          selectChallenge(),
+          15000,
+        )
 
         if (!createdChallenge) {
           throw new Error('No daily challenge is available right now.')
@@ -155,7 +167,7 @@ export function useDailyChallenge() {
         }
 
         setChallenge(null)
-        setError(getErrorMessage(loadChallengeError, 'Unable to load today\'s challenge right now.'))
+        setError(getErrorMessage(loadChallengeError, 'Could not load today\'s challenge. Please try again.'))
       } finally {
         if (isMounted) {
           setLoading(false)

@@ -7,6 +7,7 @@ import { AICoachPanel } from '../coach/AICoachPanel'
 import { LeaderboardTable } from '../leaderboard/LeaderboardTable'
 import { ShareResultCard } from '../share/ShareResultCard'
 import { GameControlPanel } from './GameControlPanel'
+import { GameResultModal } from './GameResultModal'
 import { GameSessionHeader } from './GameSessionHeader'
 import { useAICoach } from '../../hooks/useAICoach'
 import { useAuth } from '../../hooks/useAuth'
@@ -15,7 +16,7 @@ import { useLeaderboard } from '../../hooks/useLeaderboard'
 import { useRewardedHint } from '../../hooks/useRewardedHint'
 import { useSudokuGame } from '../../hooks/useSudokuGame'
 import { buildAuthRedirectPath } from '../../lib/authRedirect'
-import { calculateScore } from '../../lib/scoring'
+import { calculateScore, calculateXpFromScore } from '../../lib/scoring'
 import type { DailyChallenge } from '../../types/sudoku'
 import type { SaveGameResult } from '../../types/user'
 
@@ -59,10 +60,13 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
     selectedValue,
     selectedNotes,
     mistakes,
+    mistakeLimit,
     hintsUsed,
     timerSeconds,
     sessionId,
-    completed,
+    status,
+    isGameOver,
+    lastMove,
     checkResult,
     notesMode,
     isPaused,
@@ -105,17 +109,21 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
   const rewardedHint = useRewardedHint({
     hintsUsed,
     revealHint,
+    disabled: isGameOver,
   })
 
   const isSelectedCellFixed = selectedCell
     ? fixedCells[selectedCell.row][selectedCell.col]
     : false
+  const isWon = status === 'won'
   const scoreEstimate = useMemo(() => calculateScore({
     difficulty,
     timeSeconds: timerSeconds,
     mistakes,
     hintsUsed,
-  }), [difficulty, hintsUsed, mistakes, timerSeconds])
+    status,
+  }), [difficulty, hintsUsed, mistakes, status, timerSeconds])
+  const xpEstimate = useMemo(() => calculateXpFromScore(scoreEstimate), [scoreEstimate])
   const shareUrl = typeof window === 'undefined'
     ? '/daily'
     : `${window.location.origin}/daily`
@@ -139,6 +147,7 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
       timeSeconds: timerSeconds,
       mistakes,
       hintsUsed,
+      status,
       isDaily: true,
       challengeDate: challenge.challengeDate,
     })
@@ -158,12 +167,13 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
         difficulty={difficulty}
         difficultyLabel={difficultyConfig.label}
         difficultyDescription={difficultyConfig.description}
-        mistakeLimit={difficultyConfig.mistakeLimit}
+        mistakeLimit={mistakeLimit}
         formattedTime={formattedTime}
         mistakes={mistakes}
         hintsUsed={hintsUsed}
         notesMode={notesMode}
         isPaused={isPaused}
+        status={status}
         eyebrow="Daily"
         title="Shared challenge session"
         description={`One shared puzzle every day. Today’s board for ${formatChallengeDate(challenge.challengeDate)} is locked to a single medium challenge for everyone.`}
@@ -190,11 +200,15 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
           <div className="mt-4 flex justify-center">
             <SudokuBoard
               board={board}
+              solution={solution}
               notes={notes}
               fixedCells={fixedCells}
               selectedCell={selectedCell}
+              lastMove={lastMove}
               invalidCellKeys={invalidCellKeys}
               isPaused={isPaused}
+              isInteractionLocked={isGameOver}
+              celebrate={isWon}
               onSelectCell={selectCell}
             />
           </div>
@@ -207,7 +221,8 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
             selectedValue={selectedValue}
             selectedNotes={selectedNotes}
             isSelectedCellFixed={isSelectedCellFixed}
-            completed={completed}
+            status={status}
+            isGameOver={isGameOver}
             isPaused={isPaused}
             isComplete={isComplete}
             checkResult={checkResult}
@@ -249,80 +264,91 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
         onCancel={rewardedHint.cancelAd}
       />
 
-      {completed ? (
-        <section className="rounded-[2rem] border border-emerald-300/20 bg-emerald-400/10 p-6 shadow-[0_18px_60px_rgba(2,8,24,0.35)] backdrop-blur-sm">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-emerald-100/80">Challenge complete</p>
-              <h2 className="mt-3 font-display text-3xl font-semibold text-white">
-                Ready to submit today&apos;s result
-              </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-emerald-50/90">
-                Your daily score is based on difficulty, speed, mistakes, and hints. Each player gets one official daily submission.
-              </p>
+      <GameResultModal
+        isOpen={isGameOver}
+        status={isWon ? 'won' : 'lost'}
+        badgeLabel={isWon ? 'Daily challenge complete' : 'Daily attempt ended'}
+        title={isWon ? 'Congratulations — you won!' : 'Daily Challenge Game Over'}
+        subtitle={isWon
+          ? 'Great focus. You solved today’s shared puzzle and your score is ready to submit.'
+          : 'You used all 3 mistakes. Restart today’s puzzle to keep practicing, but only a win can be submitted.'}
+        difficultyLabel={difficultyConfig.label}
+        formattedTime={formattedTime}
+        mistakes={mistakes}
+        hintsUsed={hintsUsed}
+        score={isWon ? scoreEstimate : undefined}
+        xpGained={isWon ? xpEstimate : undefined}
+        extraContent={isWon ? (
+          <>
+            <div className="grid gap-3">
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={() => void handleSaveProgress()}
+                  disabled={saveLoading || savedSessionId === sessionId}
+                  className="rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-50 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {saveLoading
+                    ? 'Submitting daily result...'
+                    : savedSessionId === sessionId
+                      ? 'Daily result submitted'
+                      : 'Submit Daily Result'}
+                </button>
+              ) : (
+                <Link
+                  to={buildAuthRedirectPath('/daily')}
+                  className="rounded-2xl border border-cyan-300/25 bg-cyan-400/10 px-4 py-3 text-center text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/16"
+                >
+                  Sign in to save progress
+                </Link>
+              )}
+
+              {saveState ? (
+                <div className={`rounded-2xl border px-4 py-3 text-sm ${
+                  saveState.ok
+                    ? 'border-emerald-300/20 bg-emerald-500/10 text-emerald-50'
+                    : 'border-amber-300/20 bg-amber-400/10 text-amber-50'
+                }`}>
+                  {saveState.message}
+                  {saveState.ok ? ` Score saved: ${saveState.score}.` : ''}
+                </div>
+              ) : null}
             </div>
 
-            <div className="rounded-[1.6rem] border border-white/10 bg-slate-950/40 px-5 py-4">
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Score estimate</p>
-              <p className="mt-2 font-display text-3xl font-semibold text-white">{scoreEstimate}</p>
-            </div>
+            <ShareResultCard
+              mode="daily"
+              difficulty={difficulty}
+              timeSeconds={timerSeconds}
+              mistakes={mistakes}
+              hintsUsed={hintsUsed}
+              score={scoreEstimate}
+              url={shareUrl}
+              className="mt-5"
+            />
+          </>
+        ) : (
+          <div className="rounded-2xl border border-amber-300/20 bg-amber-400/10 px-4 py-3 text-sm text-amber-50">
+            Daily results only count when you win. Restart the puzzle to try again.
           </div>
-
-          <div className="mt-5 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
-            {isAuthenticated ? (
-              <button
-                type="button"
-                onClick={() => void handleSaveProgress()}
-                disabled={saveLoading || savedSessionId === sessionId}
-                className="rounded-2xl border border-white/10 bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-50 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {saveLoading
-                  ? 'Submitting daily result...'
-                  : savedSessionId === sessionId
-                    ? 'Daily result submitted'
-                    : 'Submit Daily Result'}
-              </button>
-            ) : (
-              <Link
-                to={buildAuthRedirectPath('/daily')}
-                className="rounded-2xl border border-cyan-300/25 bg-cyan-400/10 px-4 py-3 text-center text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/16"
-              >
-                Sign in to save progress
-              </Link>
-            )}
-
+        )}
+        actions={(
+          <div className="grid gap-3 sm:grid-cols-2">
             <button
               type="button"
               onClick={resetGame}
-              className="rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3 text-sm font-semibold text-white transition hover:border-cyan-300/25 hover:bg-slate-900/80"
+              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-50"
             >
-              Restart today&apos;s puzzle
+              Try Again
             </button>
+            <Link
+              to={isWon ? '/daily' : '/game'}
+              className="rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3 text-center text-sm font-semibold text-white transition hover:border-cyan-300/25 hover:bg-slate-900/80"
+            >
+              {isWon ? 'Back to Daily Hub' : 'Go to Practice Mode'}
+            </Link>
           </div>
-
-          {saveState ? (
-            <div className={`mt-4 rounded-2xl border px-4 py-3 text-sm ${
-              saveState.ok
-                ? 'border-emerald-300/20 bg-emerald-500/10 text-emerald-50'
-                : 'border-amber-300/20 bg-amber-400/10 text-amber-50'
-            }`}>
-              {saveState.message}
-              {saveState.ok ? ` Score saved: ${saveState.score}.` : ''}
-            </div>
-          ) : null}
-
-          <ShareResultCard
-            mode="daily"
-            difficulty={difficulty}
-            timeSeconds={timerSeconds}
-            mistakes={mistakes}
-            hintsUsed={hintsUsed}
-            score={scoreEstimate}
-            url={shareUrl}
-            className="mt-5"
-          />
-        </section>
-      ) : null}
+        )}
+      />
 
       <section className="rounded-[2rem] border border-white/10 bg-white/6 p-6 shadow-[0_18px_60px_rgba(2,8,24,0.35)] backdrop-blur-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

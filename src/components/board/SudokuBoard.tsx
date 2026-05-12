@@ -2,6 +2,7 @@ import { isCellInSameBox, isSamePosition } from '../../lib/sudokuValidator'
 import { cn } from '../../lib/utils'
 import type {
   CellPosition,
+  LastMove,
   NotesBoard,
   SudokuBoard as SudokuBoardType,
 } from '../../types/sudoku'
@@ -9,11 +10,15 @@ import { SudokuCell } from './SudokuCell'
 
 type SudokuBoardProps = {
   board: SudokuBoardType
+  solution?: SudokuBoardType
   notes: NotesBoard
   fixedCells: boolean[][]
   selectedCell: CellPosition | null
+  lastMove?: LastMove | null
   invalidCellKeys: Set<string>
   isPaused: boolean
+  isInteractionLocked?: boolean
+  celebrate?: boolean
   onSelectCell: (row: number, col: number) => void
 }
 
@@ -23,16 +28,25 @@ function positionKey(row: number, col: number) {
 
 export function SudokuBoard({
   board,
+  solution,
   notes,
   fixedCells,
   selectedCell,
+  lastMove = null,
   invalidCellKeys,
   isPaused,
+  isInteractionLocked = false,
+  celebrate = false,
   onSelectCell,
 }: SudokuBoardProps) {
   return (
     <div className="relative w-full max-w-[32.5rem]">
-      <div className="grid aspect-square grid-cols-9 overflow-hidden rounded-[1.35rem] border-2 border-white/14 bg-slate-950/85 shadow-[0_24px_80px_rgba(2,8,24,0.45)]">
+      <div
+        className={cn(
+          'grid aspect-square grid-cols-9 overflow-hidden rounded-[1.35rem] border-2 border-white/14 bg-slate-950/85 shadow-[0_24px_80px_rgba(2,8,24,0.45)] transition',
+          celebrate && 'sudoku-board-celebrate border-emerald-300/35 shadow-[0_24px_90px_rgba(16,185,129,0.26)] dark:border-emerald-300/28',
+        )}
+      >
         {board.flatMap((row, rowIndex) =>
           row.map((value, columnIndex) => {
             const isSelected =
@@ -48,7 +62,33 @@ export function SudokuBoard({
                 || isCellInSameBox(selectedCell.row, selectedCell.col, rowIndex, columnIndex)
               )
 
-            const isConflicting = invalidCellKeys.has(positionKey(rowIndex, columnIndex))
+            const isEditableFilled = !fixedCells[rowIndex][columnIndex] && value !== 0
+            const isCorrect = Boolean(
+              solution
+              && isEditableFilled
+              && value === solution[rowIndex][columnIndex],
+            )
+            const isWrong = Boolean(
+              solution
+              && isEditableFilled
+              && value !== solution[rowIndex][columnIndex],
+            )
+            const isConflicting =
+              !fixedCells[rowIndex][columnIndex]
+              && !isCorrect
+              && invalidCellKeys.has(positionKey(rowIndex, columnIndex))
+            const isRecentlyPlacedCorrect = Boolean(
+              lastMove
+              && lastMove.status === 'correct'
+              && lastMove.row === rowIndex
+              && lastMove.col === columnIndex,
+            )
+            const isRecentlyPlacedWrong = Boolean(
+              lastMove
+              && lastMove.status === 'wrong'
+              && lastMove.row === rowIndex
+              && lastMove.col === columnIndex,
+            )
 
             return (
               <div
@@ -67,8 +107,12 @@ export function SudokuBoard({
                   isFixed={fixedCells[rowIndex][columnIndex]}
                   isSelected={isSelected}
                   isHighlighted={isHighlighted}
+                  isCorrect={isCorrect}
+                  isWrong={isWrong}
                   isConflicting={isConflicting}
-                  isDisabled={isPaused}
+                  isRecentlyPlacedCorrect={isRecentlyPlacedCorrect}
+                  isRecentlyPlacedWrong={isRecentlyPlacedWrong}
+                  isDisabled={isPaused || isInteractionLocked}
                   onClick={() => onSelectCell(rowIndex, columnIndex)}
                 />
               </div>

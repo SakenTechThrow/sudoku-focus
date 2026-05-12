@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { buildAchievements, hasUsedAICoach, type AchievementBadge } from '../lib/achievements'
 import { computeDailyStreaks } from '../lib/streaks'
 import { supabase } from '../lib/supabaseClient'
+import { withTimeout } from '../lib/withTimeout'
 import { useAuth } from './useAuth'
 import type { Difficulty } from '../types/sudoku'
 
@@ -103,18 +104,21 @@ export function useProfileStats() {
 
     async function loadStats() {
       try {
-        const [{ data, error: loadError }, { count, error: socialError }] = await Promise.all([
-          client
-            .from('games')
-            .select('id, difficulty, score, time_seconds, mistakes, hints_used, is_daily, created_at')
-            .eq('user_id', userId)
-            .eq('completed', true)
-            .order('created_at', { ascending: false }),
-          client
-            .from('online_room_players')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', userId),
-        ])
+        const [{ data, error: loadError }, { count, error: socialError }] = await withTimeout(
+          Promise.all([
+            client
+              .from('games')
+              .select('id, difficulty, score, time_seconds, mistakes, hints_used, is_daily, created_at')
+              .eq('user_id', userId)
+              .eq('completed', true)
+              .order('created_at', { ascending: false }),
+            client
+              .from('online_room_players')
+              .select('id', { count: 'exact', head: true })
+              .eq('user_id', userId),
+          ]),
+          12000,
+        )
 
         if (loadError) {
           throw loadError
@@ -133,7 +137,7 @@ export function useProfileStats() {
 
         setGames([])
         setSocialSolverCount(0)
-        setError(getErrorMessage(loadStatsError, 'Unable to load profile stats right now.'))
+        setError(getErrorMessage(loadStatsError, 'Could not load your stats. Please try again.'))
       } finally {
         if (isMounted) {
           setLoading(false)
