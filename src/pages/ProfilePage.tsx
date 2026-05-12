@@ -1,5 +1,6 @@
 import { BarChart3, MapPin, Sparkles, UserCircle2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { CommunityCard } from '../components/community/CommunityCard'
 import { useAuth } from '../hooks/useAuth'
 import { useProfileStats } from '../hooks/useProfileStats'
 import { cn } from '../lib/utils'
@@ -329,6 +330,8 @@ export function ProfilePage() {
           </div>
         )}
       </section>
+
+      <CommunityCard />
     </div>
   )
 }

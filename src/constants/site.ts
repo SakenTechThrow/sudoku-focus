@@ -26,7 +26,7 @@ export const homeFeatures: FeatureItem[] = [
   {
     title: 'AI Coach',
     description:
-      'Translate missed patterns into practical, motivating next steps after every session.',
+      'Get fast strategy explanations and clearer next moves while you solve.',
     icon: BrainCircuit,
     accent: 'from-cyan-400/30 via-cyan-300/10 to-transparent',
     to: '/game',
@@ -35,7 +35,7 @@ export const homeFeatures: FeatureItem[] = [
   {
     title: 'Daily Challenge',
     description:
-      'Build a lightweight ritual with a fresh five-minute puzzle that fits packed schedules.',
+      'Return for one shared puzzle every day and keep your streak alive.',
     icon: CalendarDays,
     accent: 'from-amber-300/30 via-amber-200/10 to-transparent',
     to: '/daily',
@@ -44,7 +44,7 @@ export const homeFeatures: FeatureItem[] = [
   {
     title: 'City Leaderboard',
     description:
-      'Compare streaks with local players and turn focus into friendly public momentum.',
+      'Compare daily performance with local players and friendly rivals.',
     icon: Building2,
     accent: 'from-fuchsia-400/25 via-fuchsia-300/10 to-transparent',
     to: '/leaderboard',
@@ -53,7 +53,7 @@ export const homeFeatures: FeatureItem[] = [
   {
     title: 'Focus Mode',
     description:
-      'Reduce noise with a distraction-light interface designed for short, high-quality sessions.',
+      'Use a clean game workspace built for short, high-quality focus sessions.',
     icon: Target,
     accent: 'from-emerald-400/25 via-emerald-300/10 to-transparent',
     to: '/game',
@@ -62,7 +62,7 @@ export const homeFeatures: FeatureItem[] = [
   {
     title: 'Progress Analytics',
     description:
-      'Track speed, confidence, and consistency so improvement feels visible and concrete.',
+      'Track speed, streaks, XP, and puzzle history in one profile view.',
     icon: BarChart3,
     accent: 'from-sky-500/25 via-sky-300/10 to-transparent',
     to: '/profile',
@@ -71,7 +71,7 @@ export const homeFeatures: FeatureItem[] = [
   {
     title: 'Pro Themes',
     description:
-      'Unlock premium visual themes that make daily brain training feel polished and personal.',
+      'Preview premium themes and future upgrades for power users and teams.',
     icon: Palette,
     accent: 'from-rose-400/25 via-orange-300/10 to-transparent',
     to: '/pro',

@@ -1,14 +1,15 @@
 import { useEffect, useEffectEvent, useMemo, useState } from 'react'
 import {
+  type CoachInsight,
+  type CoachStatus,
   explainMove,
   explainSelectedCell,
-  getGeneralStrategyTip,
-  getPossibleValues,
+  getBestStrategyTip,
 } from '../lib/aiCoach'
 import { markAICoachUsed } from '../lib/achievements'
 import type { CandidateValue, CellPosition, SudokuBoard } from '../types/sudoku'
 
-export type AICoachStatus = 'idle' | 'fixed' | 'empty' | 'filled' | 'incorrect'
+export type AICoachStatus = CoachStatus
 
 type UseAICoachOptions = {
   board: SudokuBoard
@@ -16,10 +17,6 @@ type UseAICoachOptions = {
   fixedCells: boolean[][]
   selectedCell: CellPosition | null
   selectedValue: CandidateValue | 0
-}
-
-function cloneBoard(board: SudokuBoard) {
-  return board.map((row) => [...row]) as SudokuBoard
 }
 
 export function useAICoach({
@@ -74,12 +71,16 @@ export function useAICoach({
 
   const coachState = useMemo(() => {
     if (!selectedCell) {
+      const insight = getBestStrategyTip(board)
+
       return {
-        title: 'AI Coach',
-        message: getGeneralStrategyTip(board),
-        possibleValues: [] as CandidateValue[],
-        status: 'idle' as AICoachStatus,
-        confidence: 'Strategy tip',
+        title: insight.strategyName,
+        message: insight.explanation,
+        deeperExplanation: insight.deeperExplanation,
+        suggestedNextStep: insight.suggestedNextStep,
+        possibleValues: insight.possibleValues,
+        status: insight.status as AICoachStatus,
+        confidence: insight.confidence,
       }
     }
 
@@ -88,46 +89,43 @@ export function useAICoach({
 
     if (isFixed) {
       return {
-        title: 'AI Coach',
+        title: 'Fixed Clue',
         message:
-          'This fixed cell is part of the original puzzle, so it cannot be edited. Use it as an anchor while you eliminate candidates around it.',
-        possibleValues: [] as CandidateValue[],
+          'This fixed cell is part of the original puzzle, so it cannot be edited. Treat it as a trusted anchor while you eliminate nearby candidates.',
+        deeperExplanation:
+          'Given clues are the stable information in Sudoku. They never change, so they are the best place to start when you scan a row, column, or 3x3 box for missing numbers.',
+        suggestedNextStep:
+          'Use this clue to narrow one nearby empty cell instead of trying to change the clue itself.',
+        possibleValues: [],
         status: 'fixed' as AICoachStatus,
-        confidence: 'Locked clue',
+        confidence: 'Fixed clue',
       }
     }
 
     if (selectedValue === 0) {
+      const insight = explainSelectedCell(board, solution, row, col)
+
       return {
-        title: 'AI Coach',
-        message: explainSelectedCell(board, solution, row, col),
-        possibleValues: getPossibleValues(board, row, col),
-        status: 'empty' as AICoachStatus,
-        confidence: 'Candidate scan',
+        title: insight.strategyName,
+        message: insight.explanation,
+        deeperExplanation: insight.deeperExplanation,
+        suggestedNextStep: insight.suggestedNextStep,
+        possibleValues: insight.possibleValues,
+        status: insight.status as AICoachStatus,
+        confidence: insight.confidence,
       }
     }
 
-    const isCorrect = selectedValue === solution[row][col]
-
-    if (!isCorrect) {
-      const clearedBoard = cloneBoard(board)
-      clearedBoard[row][col] = 0
-
-      return {
-        title: 'AI Coach',
-        message: explainMove(board, solution, row, col, selectedValue),
-        possibleValues: getPossibleValues(clearedBoard, row, col),
-        status: 'incorrect' as AICoachStatus,
-        confidence: 'Needs review',
-      }
-    }
+    const insight: CoachInsight = explainMove(board, solution, row, col, selectedValue)
 
     return {
-      title: 'AI Coach',
-      message: explainMove(board, solution, row, col, selectedValue),
-      possibleValues: [] as CandidateValue[],
-      status: 'filled' as AICoachStatus,
-      confidence: 'Good move',
+      title: insight.strategyName,
+      message: insight.explanation,
+      deeperExplanation: insight.deeperExplanation,
+      suggestedNextStep: insight.suggestedNextStep,
+      possibleValues: insight.possibleValues,
+      status: insight.status as AICoachStatus,
+      confidence: insight.confidence,
     }
   }, [board, fixedCells, selectedCell, selectedValue, solution])
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ArrowRight, Globe2, TimerReset, Users2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import { CommunityCard } from '../components/community/CommunityCard'
 import { difficultyConfig, difficultyOrder } from '../constants/difficulty'
 import { useAuth } from '../hooks/useAuth'
 import { useOnlineRoom } from '../hooks/useOnlineRoom'
@@ -283,6 +284,8 @@ export function OnlinePage() {
           </div>
         </div>
       </section>
+
+      <CommunityCard compact />
     </div>
   )
 }

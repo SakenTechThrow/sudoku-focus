@@ -12,6 +12,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { CommunityCard } from '../components/community/CommunityCard'
 import { cn } from '../lib/utils'
 
 const PRO_WAITLIST_STORAGE_KEY = 'sudoku-focus-pro-waitlist'
@@ -364,6 +365,8 @@ export function ProPage() {
               This page is a prototype monetization experiment.
             </p>
           </section>
+
+          <CommunityCard compact />
         </aside>
       </section>
 

@@ -453,6 +453,8 @@ export function OnlineRoomPage() {
           <AICoachPanel
             title={coach.title}
             message={coach.message}
+            deeperExplanation={coach.deeperExplanation}
+            suggestedNextStep={coach.suggestedNextStep}
             possibleValues={coach.possibleValues}
             status={coach.status}
             confidence={coach.confidence}
