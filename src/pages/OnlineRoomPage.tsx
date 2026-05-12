@@ -6,6 +6,7 @@ import { NumberPad } from '../components/board/NumberPad'
 import { SudokuBoard } from '../components/board/SudokuBoard'
 import { AICoachPanel } from '../components/coach/AICoachPanel'
 import { GameResultModal } from '../components/game/GameResultModal'
+import { PreGameReadyCard } from '../components/game/PreGameReadyCard'
 import { GameSessionHeader } from '../components/game/GameSessionHeader'
 import { difficultyConfig } from '../constants/difficulty'
 import { useAICoach } from '../hooks/useAICoach'
@@ -219,6 +220,7 @@ export function OnlineRoomPage() {
         status,
       })
     : 0
+  const showReadyScreen = !hasStarted && status === 'playing'
 
   return (
     <div className="space-y-3 lg:space-y-4">
@@ -334,213 +336,230 @@ export function OnlineRoomPage() {
         </section>
       ) : null}
 
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="space-y-4">
-          <div className="rounded-[1.9rem] border border-slate-200/90 bg-white/82 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-200/75">
-                  {room.mode === 'collaborative' ? 'Shared board' : 'Your race board'}
-                </p>
-                <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                  {room.mode === 'collaborative'
-                    ? hasStarted
-                      ? 'Every move updates the same room board for everyone.'
-                      : 'Press Start or make your first move when you are ready to help solve the room.'
-                    : hasStarted
-                      ? 'Everyone solves the same puzzle separately. Your moves do not change other players\' boards.'
-                      : 'Press Start or make your first move when you are ready to begin the race.'}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={clearSelection}
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-800 transition hover:border-cyan-300/35 hover:bg-cyan-50/70 dark:border-white/10 dark:bg-slate-950/45 dark:text-slate-200 dark:hover:bg-slate-900/80"
-              >
-                Clear Selection
-              </button>
-            </div>
-
-            <div className="mt-4 flex justify-center">
-              <SudokuBoard
-                board={board}
-                solution={solution}
-                notes={notes}
-                fixedCells={fixedCells}
-                selectedCell={selectedCell}
-                lastMove={lastMove}
-                invalidCellKeys={invalidCellKeys}
-                isPaused={false}
-                isInteractionLocked={!canEdit}
-                celebrate={status === 'won' || room.status === 'completed'}
-                onSelectCell={selectCell}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4 lg:sticky lg:top-24">
-          {!hasStarted && !isGameOver && currentPlayer ? (
-            <section className="rounded-[1.8rem] border border-cyan-200/90 bg-cyan-100/80 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-cyan-300/20 dark:bg-cyan-400/10 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5">
-              <p className="text-xs uppercase tracking-[0.28em] text-cyan-800 dark:text-cyan-100/80">
-                Ready to start?
+      {showReadyScreen ? (
+        <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_22rem]">
+          {currentPlayer ? (
+            <PreGameReadyCard
+              eyebrow="Online room"
+              title="Ready to join the room?"
+              description={room.mode === 'collaborative'
+                ? 'You will solve one shared board together with other players.'
+                : 'You will solve your own board while competing with others.'}
+              actionLabel="Start Playing"
+              onStart={startGame}
+              stats={[
+                { label: 'Mode', value: formatOnlineMode(room.mode) },
+                { label: 'Difficulty', value: difficultyMeta.label },
+                { label: 'Mistake limit', value: `${mistakeLimit}` },
+                { label: 'Players', value: `${players.length}` },
+              ]}
+              footnote={room.mode === 'collaborative'
+                ? 'The room is already live. Your local timer and board view begin only when you press Start Playing.'
+                : 'Your race timer stays at 00:00 until you choose to begin.'}
+            />
+          ) : (
+            <section className="rounded-[1.9rem] border border-slate-200/90 bg-white/82 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-6">
+              <p className="text-xs uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-200/75">Online room</p>
+              <h2 className="mt-3 font-display text-[2rem] font-semibold tracking-tight text-slate-950 dark:text-white sm:text-[2.35rem]">
+                Preparing your seat in the room
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300 sm:text-base">
+                {room.mode === 'race'
+                  ? 'Joining the race room and preparing your personal board.'
+                  : 'Joining the collaborative room and syncing the shared session.'}
               </p>
-              <p className="mt-2 text-sm leading-6 text-cyan-950 dark:text-cyan-50">
-                {room.mode === 'collaborative'
-                  ? 'Choose a cell or press Start Playing when you want your local timer to begin.'
-                  : 'Choose a cell or press Start Playing when you want your race timer to begin.'}
-              </p>
-              <button
-                type="button"
-                onClick={startGame}
-                className="mt-4 w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-[color:#f8fbff] transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-50"
-              >
-                Start Playing
-              </button>
             </section>
-          ) : null}
+          )}
 
-          <NumberPad
-            selectedCell={selectedCell}
-            selectedValue={selectedValue}
-            selectedNotes={selectedNotes}
-            isSelectedCellFixed={selectedCellFixed}
-            completed={numberPadCompleted}
-            isPaused={false}
-            notesMode={notesMode}
-            onValueSelect={setCellValue}
-            onClear={clearCell}
-          />
-
-          <section className="rounded-[1.8rem] border border-slate-200/90 bg-white/82 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={toggleNotesMode}
-                disabled={!canEdit}
-                className={cn(
-                  'rounded-2xl border px-4 py-3 text-sm font-semibold transition',
-                  canEdit
-                    ? notesMode
-                      ? 'border-fuchsia-200 bg-fuchsia-100/85 text-fuchsia-950 dark:border-fuchsia-300/35 dark:bg-fuchsia-400/14 dark:text-fuchsia-100'
-                      : 'border-slate-200 bg-white text-slate-900 hover:border-fuchsia-300/30 hover:bg-fuchsia-50/70 dark:border-white/10 dark:bg-slate-950/55 dark:text-white dark:hover:bg-slate-900/80'
-                    : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-white/8 dark:bg-slate-950/40 dark:text-slate-500',
-                )}
-              >
-                {notesMode ? 'Notes On' : 'Notes'}
-              </button>
-
-              <button
-                type="button"
-                onClick={rewardedHint.requestHint}
-                disabled={!canEdit}
-                className={cn(
-                  'rounded-2xl border px-4 py-3 text-sm font-semibold transition',
-                  canEdit
-                    ? 'border-emerald-200 bg-emerald-100/85 text-emerald-950 hover:border-emerald-300 hover:bg-emerald-100 dark:border-emerald-300/25 dark:bg-emerald-400/10 dark:text-emerald-100 dark:hover:bg-emerald-400/16'
-                    : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-white/8 dark:bg-slate-950/40 dark:text-slate-500',
-                )}
-              >
-                {rewardedHint.hintActionLabel}
-              </button>
-
-              <button
-                type="button"
-                onClick={checkSolution}
-                disabled={!canEdit}
-                className={cn(
-                  'rounded-2xl px-4 py-3 text-sm font-semibold transition',
-                  canEdit
-                    ? 'bg-slate-950 text-[color:#f8fbff] hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-50'
-                    : 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400 dark:border-white/8 dark:bg-slate-950/40 dark:text-slate-500',
-                )}
-              >
-                Check Solution
-              </button>
-
-              <button
-                type="button"
-                onClick={clearCell}
-                disabled={!canEdit}
-                className={cn(
-                  'rounded-2xl border px-4 py-3 text-sm font-semibold transition',
-                  canEdit
-                    ? 'border-rose-200 bg-rose-100/85 text-rose-950 hover:border-rose-300 hover:bg-rose-100 dark:border-rose-400/25 dark:bg-rose-400/10 dark:text-rose-100 dark:hover:bg-rose-400/16'
-                    : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-white/8 dark:bg-slate-950/40 dark:text-slate-500',
-                )}
-              >
-                Clear Value
-              </button>
-
-              {room.mode === 'race' ? (
+          <div className="rounded-[1.8rem] border border-slate-200/90 bg-white/82 p-4 text-sm leading-6 text-slate-600 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:text-slate-300 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5 lg:sticky lg:top-24">
+            The room can keep syncing in real time before you begin, but your board stays hidden until you press Start Playing.
+          </div>
+        </section>
+      ) : (
+        <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="space-y-4">
+            <div className="rounded-[1.9rem] border border-slate-200/90 bg-white/82 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-200/75">
+                    {room.mode === 'collaborative' ? 'Shared board' : 'Your race board'}
+                  </p>
+                  <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                    {room.mode === 'collaborative'
+                      ? 'Every move updates the same room board for everyone.'
+                      : 'Everyone solves the same puzzle separately. Your moves do not change other players\' boards.'}
+                  </p>
+                </div>
                 <button
                   type="button"
-                  onClick={() => void resetBoard()}
+                  onClick={clearSelection}
+                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-800 transition hover:border-cyan-300/35 hover:bg-cyan-50/70 dark:border-white/10 dark:bg-slate-950/45 dark:text-slate-200 dark:hover:bg-slate-900/80"
+                >
+                  Clear Selection
+                </button>
+              </div>
+
+              <div className="mt-4 flex justify-center">
+                <SudokuBoard
+                  board={board}
+                  solution={solution}
+                  notes={notes}
+                  fixedCells={fixedCells}
+                  selectedCell={selectedCell}
+                  lastMove={lastMove}
+                  invalidCellKeys={invalidCellKeys}
+                  isPaused={false}
+                  isInteractionLocked={!canEdit}
+                  celebrate={status === 'won' || room.status === 'completed'}
+                  onSelectCell={selectCell}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 lg:sticky lg:top-24">
+            <NumberPad
+              selectedCell={selectedCell}
+              selectedValue={selectedValue}
+              selectedNotes={selectedNotes}
+              isSelectedCellFixed={selectedCellFixed}
+              completed={numberPadCompleted}
+              isPaused={false}
+              notesMode={notesMode}
+              onValueSelect={setCellValue}
+              onClear={clearCell}
+            />
+
+            <section className="rounded-[1.8rem] border border-slate-200/90 bg-white/82 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={toggleNotesMode}
                   disabled={!canEdit}
                   className={cn(
                     'rounded-2xl border px-4 py-3 text-sm font-semibold transition',
                     canEdit
-                      ? 'border-slate-200 bg-white text-slate-900 hover:border-cyan-300/35 hover:bg-cyan-50/70 dark:border-white/10 dark:bg-slate-950/55 dark:text-white dark:hover:bg-slate-900/80'
+                      ? notesMode
+                        ? 'border-fuchsia-200 bg-fuchsia-100/85 text-fuchsia-950 dark:border-fuchsia-300/35 dark:bg-fuchsia-400/14 dark:text-fuchsia-100'
+                        : 'border-slate-200 bg-white text-slate-900 hover:border-fuchsia-300/30 hover:bg-fuchsia-50/70 dark:border-white/10 dark:bg-slate-950/55 dark:text-white dark:hover:bg-slate-900/80'
                       : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-white/8 dark:bg-slate-950/40 dark:text-slate-500',
                   )}
                 >
-                  Reset My Board
+                  {notesMode ? 'Notes On' : 'Notes'}
                 </button>
-              ) : null}
-            </div>
 
-            <div className="mt-5">
-              {!isAuthenticated ? (
-                <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
-                  Sign in to join the room and make live moves.
-                </p>
-              ) : !currentPlayer ? (
-                <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
-                  {room.mode === 'race'
-                    ? 'Joining race room... Your board will start from the shared puzzle and stay private to you.'
-                    : 'Joining the room so your board can sync...'}
-                </p>
-              ) : (
-                <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
-                  {status === 'lost'
-                    ? room.mode === 'collaborative'
-                      ? 'You used all 3 mistakes in this room. Your board is locked locally while teammates can keep solving.'
-                      : 'Game over for this race board. Reset your board to practice again, or watch the standings live.'
-                    : room.mode === 'collaborative'
-                      ? 'Every correct shared move helps the whole room finish faster.'
-                      : 'Your personal board updates separately while standings show everyone else racing on the same puzzle.'}
-                </p>
-              )}
-            </div>
+                <button
+                  type="button"
+                  onClick={rewardedHint.requestHint}
+                  disabled={!canEdit}
+                  className={cn(
+                    'rounded-2xl border px-4 py-3 text-sm font-semibold transition',
+                    canEdit
+                      ? 'border-emerald-200 bg-emerald-100/85 text-emerald-950 hover:border-emerald-300 hover:bg-emerald-100 dark:border-emerald-300/25 dark:bg-emerald-400/10 dark:text-emerald-100 dark:hover:bg-emerald-400/16'
+                      : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-white/8 dark:bg-slate-950/40 dark:text-slate-500',
+                  )}
+                >
+                  {rewardedHint.hintActionLabel}
+                </button>
 
-            {checkResult ? (
-              <div className={cn(
-                'mt-5 rounded-2xl border px-4 py-3 text-sm font-medium',
-                checkResult.status === 'solved'
-                  ? 'border-emerald-200 bg-emerald-100/85 text-emerald-950 dark:border-emerald-300/25 dark:bg-emerald-400/10 dark:text-emerald-100'
-                  : checkResult.status === 'incorrect'
-                    ? 'border-rose-200 bg-rose-100/85 text-rose-950 dark:border-rose-300/25 dark:bg-rose-400/10 dark:text-rose-100'
-                    : 'border-amber-200 bg-amber-100/85 text-amber-950 dark:border-amber-300/25 dark:bg-amber-400/10 dark:text-amber-50',
-              )}
-              >
-                {checkResult.message}
+                <button
+                  type="button"
+                  onClick={checkSolution}
+                  disabled={!canEdit}
+                  className={cn(
+                    'rounded-2xl px-4 py-3 text-sm font-semibold transition',
+                    canEdit
+                      ? 'bg-slate-950 text-[color:#f8fbff] hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-50'
+                      : 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400 dark:border-white/8 dark:bg-slate-950/40 dark:text-slate-500',
+                  )}
+                >
+                  Check Solution
+                </button>
+
+                <button
+                  type="button"
+                  onClick={clearCell}
+                  disabled={!canEdit}
+                  className={cn(
+                    'rounded-2xl border px-4 py-3 text-sm font-semibold transition',
+                    canEdit
+                      ? 'border-rose-200 bg-rose-100/85 text-rose-950 hover:border-rose-300 hover:bg-rose-100 dark:border-rose-400/25 dark:bg-rose-400/10 dark:text-rose-100 dark:hover:bg-rose-400/16'
+                      : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-white/8 dark:bg-slate-950/40 dark:text-slate-500',
+                  )}
+                >
+                  Clear Value
+                </button>
+
+                {room.mode === 'race' ? (
+                  <button
+                    type="button"
+                    onClick={() => void resetBoard()}
+                    disabled={!canEdit}
+                    className={cn(
+                      'rounded-2xl border px-4 py-3 text-sm font-semibold transition',
+                      canEdit
+                        ? 'border-slate-200 bg-white text-slate-900 hover:border-cyan-300/35 hover:bg-cyan-50/70 dark:border-white/10 dark:bg-slate-950/55 dark:text-white dark:hover:bg-slate-900/80'
+                        : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 dark:border-white/8 dark:bg-slate-950/40 dark:text-slate-500',
+                    )}
+                  >
+                    Reset My Board
+                  </button>
+                ) : null}
               </div>
-            ) : null}
-          </section>
 
-          <AICoachPanel
-            title={coach.title}
-            message={coach.message}
-            deeperExplanation={coach.deeperExplanation}
-            suggestedNextStep={coach.suggestedNextStep}
-            possibleValues={coach.possibleValues}
-            status={coach.status}
-            confidence={coach.confidence}
-            focusSignal={coach.focusSignal}
-            onRefresh={coach.refreshExplanation}
-          />
-        </div>
-      </section>
+              <div className="mt-5">
+                {!isAuthenticated ? (
+                  <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
+                    Sign in to join the room and make live moves.
+                  </p>
+                ) : !currentPlayer ? (
+                  <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
+                    {room.mode === 'race'
+                      ? 'Joining race room... Your board will start from the shared puzzle and stay private to you.'
+                      : 'Joining the room so your board can sync...'}
+                  </p>
+                ) : (
+                  <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
+                    {status === 'lost'
+                      ? room.mode === 'collaborative'
+                        ? 'You used all 3 mistakes in this room. Your board is locked locally while teammates can keep solving.'
+                        : 'Game over for this race board. Reset your board to practice again, or watch the standings live.'
+                      : room.mode === 'collaborative'
+                        ? 'Every correct shared move helps the whole room finish faster.'
+                        : 'Your personal board updates separately while standings show everyone else racing on the same puzzle.'}
+                  </p>
+                )}
+              </div>
+
+              {checkResult ? (
+                <div className={cn(
+                  'mt-5 rounded-2xl border px-4 py-3 text-sm font-medium',
+                  checkResult.status === 'solved'
+                    ? 'border-emerald-200 bg-emerald-100/85 text-emerald-950 dark:border-emerald-300/25 dark:bg-emerald-400/10 dark:text-emerald-100'
+                    : checkResult.status === 'incorrect'
+                      ? 'border-rose-200 bg-rose-100/85 text-rose-950 dark:border-rose-300/25 dark:bg-rose-400/10 dark:text-rose-100'
+                      : 'border-amber-200 bg-amber-100/85 text-amber-950 dark:border-amber-300/25 dark:bg-amber-400/10 dark:text-amber-50',
+                )}
+                >
+                  {checkResult.message}
+                </div>
+              ) : null}
+            </section>
+
+            <AICoachPanel
+              title={coach.title}
+              message={coach.message}
+              deeperExplanation={coach.deeperExplanation}
+              suggestedNextStep={coach.suggestedNextStep}
+              possibleValues={coach.possibleValues}
+              status={coach.status}
+              confidence={coach.confidence}
+              focusSignal={coach.focusSignal}
+              onRefresh={coach.refreshExplanation}
+            />
+          </div>
+        </section>
+      )}
 
       {room.mode === 'race' ? (
         <section className="rounded-[1.9rem] border border-slate-200/90 bg-white/82 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-6">

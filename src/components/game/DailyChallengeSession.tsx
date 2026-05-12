@@ -8,6 +8,7 @@ import { LeaderboardTable } from '../leaderboard/LeaderboardTable'
 import { ShareResultCard } from '../share/ShareResultCard'
 import { GameControlPanel } from './GameControlPanel'
 import { GameResultModal } from './GameResultModal'
+import { PreGameReadyCard } from './PreGameReadyCard'
 import { GameSessionHeader } from './GameSessionHeader'
 import { useAICoach } from '../../hooks/useAICoach'
 import { useAuth } from '../../hooks/useAuth'
@@ -129,6 +130,7 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
   const shareUrl = typeof window === 'undefined'
     ? '/daily'
     : `${window.location.origin}/daily`
+  const showReadyScreen = !hasStarted && !isGameOver
 
   useEffect(() => {
     setSaveState(null)
@@ -182,87 +184,110 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
         description={`One shared puzzle every day. Today’s board for ${formatChallengeDate(challenge.challengeDate)} is locked to a single medium challenge for everyone.`}
       />
 
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="rounded-[1.9rem] border border-slate-200/90 bg-white/82 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-200/75">Daily Board</p>
-              <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                Everyone sees the same puzzle today. Press Start or make your first move when you're ready.
-              </p>
+      {showReadyScreen ? (
+        <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <PreGameReadyCard
+            eyebrow="Daily challenge"
+            title="Ready for today's challenge?"
+            description="One shared puzzle for today. Start when you are ready."
+            actionLabel="Start Daily Challenge"
+            onStart={startGame}
+            stats={[
+              { label: 'Date', value: formatChallengeDate(challenge.challengeDate) },
+              { label: 'Difficulty', value: difficultyConfig.label },
+              { label: 'Mistake limit', value: `${mistakeLimit}` },
+              { label: 'Leaderboard', value: 'Daily standings' },
+            ]}
+            footnote="Daily results count only after a winning finish, and the leaderboard updates below."
+          />
+
+          <div className="rounded-[1.8rem] border border-slate-200/90 bg-white/82 p-4 text-sm leading-6 text-slate-600 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:text-slate-300 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5 lg:sticky lg:top-24">
+            Your timer stays at <span className="font-semibold text-slate-950 dark:text-white">00:00</span> until you start today&apos;s puzzle.
+          </div>
+        </section>
+      ) : (
+        <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="rounded-[1.9rem] border border-slate-200/90 bg-white/82 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-200/75">Daily Board</p>
+                <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                  Everyone sees the same puzzle today. Solve cleanly to climb the daily rankings.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={clearSelection}
+                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-800 transition hover:border-cyan-300/35 hover:bg-cyan-50/70 dark:border-white/10 dark:bg-slate-950/45 dark:text-slate-200 dark:hover:bg-slate-900/80"
+              >
+                Clear Selection
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={clearSelection}
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-800 transition hover:border-cyan-300/35 hover:bg-cyan-50/70 dark:border-white/10 dark:bg-slate-950/45 dark:text-slate-200 dark:hover:bg-slate-900/80"
-            >
-              Clear Selection
-            </button>
+
+            <div className="mt-4 flex justify-center">
+              <SudokuBoard
+                board={board}
+                solution={solution}
+                notes={notes}
+                fixedCells={fixedCells}
+                selectedCell={selectedCell}
+                lastMove={lastMove}
+                invalidCellKeys={invalidCellKeys}
+                isPaused={isPaused}
+                isInteractionLocked={isGameOver}
+                celebrate={isWon}
+                onSelectCell={selectCell}
+              />
+            </div>
           </div>
 
-          <div className="mt-4 flex justify-center">
-            <SudokuBoard
-              board={board}
-              solution={solution}
-              notes={notes}
-              fixedCells={fixedCells}
+          <div className="space-y-4 lg:sticky lg:top-24">
+            <GameControlPanel
+              difficulty={difficulty}
               selectedCell={selectedCell}
-              lastMove={lastMove}
-              invalidCellKeys={invalidCellKeys}
+              selectedValue={selectedValue}
+              selectedNotes={selectedNotes}
+              isSelectedCellFixed={isSelectedCellFixed}
+              status={status}
+              isGameOver={isGameOver}
+              hasStarted={hasStarted}
               isPaused={isPaused}
-              isInteractionLocked={isGameOver}
-              celebrate={isWon}
-              onSelectCell={selectCell}
+              isComplete={isComplete}
+              checkResult={checkResult}
+              notesMode={notesMode}
+              hintsUsed={hintsUsed}
+              hintActionLabel={rewardedHint.hintActionLabel}
+              onDifficultySelect={() => {}}
+              onValueSelect={setCellValue}
+              onClear={clearCell}
+              onToggleNotesMode={toggleNotesMode}
+              onRevealHint={rewardedHint.requestHint}
+              onCheckSolution={checkSolution}
+              onStartGame={startGame}
+              onStartNewGame={() => {}}
+              onResetGame={resetGame}
+              onTogglePause={togglePause}
+              onClearSavedProgress={() => {}}
+              showDifficultySelector={false}
+              showStartNewGame={false}
+              showClearSavedProgress={false}
+              startActionLabel="Start Daily Challenge"
+            />
+
+            <AICoachPanel
+              title={coach.title}
+              message={coach.message}
+              deeperExplanation={coach.deeperExplanation}
+              suggestedNextStep={coach.suggestedNextStep}
+              possibleValues={coach.possibleValues}
+              status={coach.status}
+              confidence={coach.confidence}
+              focusSignal={coach.focusSignal}
+              onRefresh={coach.refreshExplanation}
             />
           </div>
-        </div>
-
-        <div className="space-y-4 lg:sticky lg:top-24">
-          <GameControlPanel
-            difficulty={difficulty}
-            selectedCell={selectedCell}
-            selectedValue={selectedValue}
-            selectedNotes={selectedNotes}
-            isSelectedCellFixed={isSelectedCellFixed}
-            status={status}
-            isGameOver={isGameOver}
-            hasStarted={hasStarted}
-            isPaused={isPaused}
-            isComplete={isComplete}
-            checkResult={checkResult}
-            notesMode={notesMode}
-            hintsUsed={hintsUsed}
-            hintActionLabel={rewardedHint.hintActionLabel}
-            onDifficultySelect={() => {}}
-            onValueSelect={setCellValue}
-            onClear={clearCell}
-            onToggleNotesMode={toggleNotesMode}
-            onRevealHint={rewardedHint.requestHint}
-            onCheckSolution={checkSolution}
-            onStartGame={startGame}
-            onStartNewGame={() => {}}
-            onResetGame={resetGame}
-            onTogglePause={togglePause}
-            onClearSavedProgress={() => {}}
-            showDifficultySelector={false}
-            showStartNewGame={false}
-            showClearSavedProgress={false}
-            startActionLabel="Start Daily Challenge"
-          />
-
-          <AICoachPanel
-            title={coach.title}
-            message={coach.message}
-            deeperExplanation={coach.deeperExplanation}
-            suggestedNextStep={coach.suggestedNextStep}
-            possibleValues={coach.possibleValues}
-            status={coach.status}
-            confidence={coach.confidence}
-            focusSignal={coach.focusSignal}
-            onRefresh={coach.refreshExplanation}
-          />
-        </div>
-      </section>
+        </section>
+      )}
 
       <NFactorialRewardedAdModal
         isOpen={rewardedHint.isAdOpen}

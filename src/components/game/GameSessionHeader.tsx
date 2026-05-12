@@ -47,7 +47,7 @@ export function GameSessionHeader({
     : status === 'lost'
       ? 'Stopped after game over'
       : !hasStarted
-        ? 'Ready when you are'
+        ? 'Ready'
       : isPaused
         ? 'Paused and ready to resume'
         : 'Running focus timer'
