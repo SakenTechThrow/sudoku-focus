@@ -29,10 +29,10 @@ export function NFactorialRewardedAdModal({
               Sponsored hint unlock
             </p>
             <h2 className="mt-3 font-display text-3xl font-semibold text-slate-950 dark:text-white">
-              Watch a short nFactorial message to unlock your next hint
+              Watch a short nFactorial Incubator message to unlock your next hint
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
-              You have used your {FREE_HINT_LIMIT} free hints. Watch this quick learning break to continue getting hints.
+              You have used your {FREE_HINT_LIMIT} free hints. Watch this quick nFactorial learning break to continue getting hints and sharpen your problem-solving skills.
             </p>
           </div>
 
