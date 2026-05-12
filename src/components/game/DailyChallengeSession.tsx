@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
-import { NFactorialAdCard } from '../ads/NFactorialAdCard'
+import { NFactorialRewardedAdModal } from '../ads/NFactorialRewardedAdModal'
 import { SudokuBoard } from '../board/SudokuBoard'
 import { AICoachPanel } from '../coach/AICoachPanel'
 import { LeaderboardTable } from '../leaderboard/LeaderboardTable'
@@ -11,7 +11,7 @@ import { useAICoach } from '../../hooks/useAICoach'
 import { useAuth } from '../../hooks/useAuth'
 import { useGamePersistence } from '../../hooks/useGamePersistence'
 import { useLeaderboard } from '../../hooks/useLeaderboard'
-import { useSessionAdDismissal } from '../../hooks/useSessionAdDismissal'
+import { useRewardedHint } from '../../hooks/useRewardedHint'
 import { useSudokuGame } from '../../hooks/useSudokuGame'
 import { calculateScore } from '../../lib/scoring'
 import type { DailyChallenge } from '../../types/sudoku'
@@ -100,6 +100,10 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
   const [saveState, setSaveState] = useState<SaveGameResult | null>(null)
   const [saveLoading, setSaveLoading] = useState(false)
   const [savedSessionId, setSavedSessionId] = useState<number | null>(null)
+  const rewardedHint = useRewardedHint({
+    hintsUsed,
+    revealHint,
+  })
 
   const isSelectedCellFixed = selectedCell
     ? fixedCells[selectedCell.row][selectedCell.col]
@@ -110,14 +114,6 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
     mistakes,
     hintsUsed,
   }), [difficulty, hintsUsed, mistakes, timerSeconds])
-  const puzzleSignature = useMemo(
-    () => puzzle.flat().join(''),
-    [puzzle],
-  )
-  const adStorageKey =
-    `nfactorial-ad-dismissed-daily-${challenge.challengeDate}-${sessionId}-${puzzleSignature}`
-  const { isVisible: isNFactorialAdVisible, dismiss: dismissNFactorialAd } =
-    useSessionAdDismissal(adStorageKey, hintsUsed > 3)
 
   useEffect(() => {
     setSaveState(null)
@@ -212,11 +208,12 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
             checkResult={checkResult}
             notesMode={notesMode}
             hintsUsed={hintsUsed}
+            hintActionLabel={rewardedHint.hintActionLabel}
             onDifficultySelect={() => {}}
             onValueSelect={setCellValue}
             onClear={clearCell}
             onToggleNotesMode={toggleNotesMode}
-            onRevealHint={revealHint}
+            onRevealHint={rewardedHint.requestHint}
             onCheckSolution={checkSolution}
             onStartNewGame={() => {}}
             onResetGame={resetGame}
@@ -226,10 +223,6 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
             showStartNewGame={false}
             showClearSavedProgress={false}
           />
-
-          {isNFactorialAdVisible ? (
-            <NFactorialAdCard onDismiss={dismissNFactorialAd} />
-          ) : null}
 
           <AICoachPanel
             title={coach.title}
@@ -242,6 +235,12 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
           />
         </div>
       </section>
+
+      <NFactorialRewardedAdModal
+        isOpen={rewardedHint.isAdOpen}
+        onConfirm={rewardedHint.confirmAdAndRevealHint}
+        onCancel={rewardedHint.cancelAd}
+      />
 
       {completed ? (
         <section className="rounded-[2rem] border border-emerald-300/20 bg-emerald-400/10 p-6 shadow-[0_18px_60px_rgba(2,8,24,0.35)] backdrop-blur-sm">

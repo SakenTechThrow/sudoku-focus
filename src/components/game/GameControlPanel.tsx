@@ -27,6 +27,7 @@ type GameControlPanelProps = {
   checkResult: CheckResult | null
   notesMode: boolean
   hintsUsed: number
+  hintActionLabel?: string
   onDifficultySelect: (difficulty: Difficulty) => void
   onValueSelect: (value: CandidateValue) => void
   onClear: () => void
@@ -56,6 +57,7 @@ export function GameControlPanel({
   checkResult,
   notesMode,
   hintsUsed,
+  hintActionLabel = 'Hint',
   onDifficultySelect,
   onValueSelect,
   onClear,
@@ -149,7 +151,7 @@ export function GameControlPanel({
             )}
           >
             <Lightbulb className="h-4 w-4" />
-            Hint
+            {hintActionLabel}
             <span className="rounded-full bg-white/70 px-2 py-0.5 text-xs text-inherit dark:bg-white/10">
               {hintsUsed}
             </span>
