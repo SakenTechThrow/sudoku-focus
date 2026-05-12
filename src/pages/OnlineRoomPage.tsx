@@ -184,7 +184,7 @@ export function OnlineRoomPage() {
   const numberPadCompleted = editingLocked || completed
 
   return (
-    <div className="space-y-4 lg:space-y-5">
+    <div className="space-y-3 lg:space-y-4">
       <GameSessionHeader
         difficulty={room.difficulty}
         difficultyLabel={difficultyMeta.label}
@@ -325,86 +325,9 @@ export function OnlineRoomPage() {
               />
             </div>
           </div>
-
-          {room.mode === 'race' ? (
-            <section className="rounded-[2rem] border border-slate-200/90 bg-white/82 p-6 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)]">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Standings</p>
-                  <h2 className="mt-2 font-display text-3xl font-semibold text-slate-950 dark:text-white">
-                    Live race board
-                  </h2>
-                </div>
-                {winnerPlayer ? (
-                  <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-100/85 px-4 py-2 text-sm font-semibold text-amber-950 dark:border-amber-300/20 dark:bg-amber-400/10 dark:text-amber-100">
-                    <Crown className="h-4 w-4" />
-                    {winnerPlayer.displayName} leads
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="mt-5 space-y-3">
-                {standings.map((player, index) => (
-                  <div
-                    key={player.id}
-                    className="rounded-[1.5rem] border border-slate-200 bg-slate-50/90 p-4 dark:border-white/10 dark:bg-slate-950/45"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-slate-950 dark:text-white">
-                          #{index + 1} {player.displayName}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{player.city}</p>
-                      </div>
-                      <span className={cn(
-                        'rounded-full px-3 py-1 text-xs font-medium',
-                        player.completed
-                          ? 'bg-emerald-100/85 text-emerald-950 dark:bg-emerald-400/10 dark:text-emerald-100'
-                          : 'bg-slate-200 text-slate-700 dark:bg-white/8 dark:text-slate-300',
-                      )}
-                      >
-                        {player.completed ? 'Finished' : 'Solving'}
-                      </span>
-                    </div>
-
-                    <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-                      <div>
-                        <p className="text-slate-500 dark:text-slate-400">Score</p>
-                        <p className="mt-1 font-semibold text-slate-950 dark:text-white">{player.score}</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-500 dark:text-slate-400">Time</p>
-                        <p className="mt-1 font-semibold text-slate-950 dark:text-white">{formatTime(player.timeSeconds)}</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-500 dark:text-slate-400">Mistakes</p>
-                        <p className="mt-1 font-semibold text-slate-950 dark:text-white">{player.mistakes}</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-500 dark:text-slate-400">Hints</p>
-                        <p className="mt-1 font-semibold text-slate-950 dark:text-white">{player.hintsUsed}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ) : room.status === 'completed' ? (
-            <section className="rounded-[2rem] border border-emerald-200 bg-emerald-100/85 p-6 text-center dark:border-emerald-300/20 dark:bg-emerald-400/10">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white/70 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-100">
-                <CheckCircle2 className="h-7 w-7" />
-              </div>
-              <h2 className="mt-4 font-display text-3xl font-semibold text-slate-950 dark:text-white">
-                Room solved!
-              </h2>
-              <p className="mt-3 text-sm leading-7 text-emerald-950 dark:text-emerald-50">
-                Everyone in this collaborative room is now looking at the completed shared board.
-              </p>
-            </section>
-          ) : null}
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 lg:sticky lg:top-24">
           <NumberPad
             selectedCell={selectedCell}
             selectedValue={selectedValue}
@@ -536,57 +459,134 @@ export function OnlineRoomPage() {
             focusSignal={coach.focusSignal}
             onRefresh={coach.refreshExplanation}
           />
+        </div>
+      </section>
 
-          <section className="rounded-[1.8rem] border border-slate-200/90 bg-white/82 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-200/75">Room players</p>
-                <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                  Live roster for this room.
-                </p>
-              </div>
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-cyan-800 dark:border-white/10 dark:bg-slate-950/55 dark:text-cyan-100">
-                <Users2 className="h-5 w-5" />
-              </div>
+      {room.mode === 'race' ? (
+        <section className="rounded-[1.9rem] border border-slate-200/90 bg-white/82 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-6">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Standings</p>
+              <h2 className="mt-2 font-display text-2xl font-semibold text-slate-950 dark:text-white sm:text-3xl">
+                Live race board
+              </h2>
             </div>
+            {winnerPlayer ? (
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-100/85 px-4 py-2 text-sm font-semibold text-amber-950 dark:border-amber-300/20 dark:bg-amber-400/10 dark:text-amber-100">
+                <Crown className="h-4 w-4" />
+                {winnerPlayer.displayName} leads
+              </div>
+            ) : null}
+          </div>
 
-            <div className="mt-4 space-y-3">
-              {players.map((player) => {
-                const joinedTime = formatJoinedTime(player.createdAt ?? player.joinedAt)
-
-                return (
-                  <div
-                    key={player.id}
-                    className="rounded-[1.4rem] border border-slate-200 bg-slate-50/90 px-4 py-3 dark:border-white/10 dark:bg-slate-950/45"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-slate-950 dark:text-white">
-                          {player.displayName}
-                          {player.userId === currentPlayer?.userId ? ' (You)' : ''}
-                        </p>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">{player.city}</p>
-                        {joinedTime ? (
-                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                            Joined {joinedTime}
-                          </p>
-                        ) : null}
-                      </div>
-                      <span className={cn(
-                        'rounded-full px-3 py-1 text-xs font-medium',
-                        player.completed
-                          ? 'bg-emerald-100/85 text-emerald-950 dark:bg-emerald-400/10 dark:text-emerald-100'
-                          : 'bg-slate-200 text-slate-700 dark:bg-white/8 dark:text-slate-300',
-                      )}
-                      >
-                        {player.completed ? 'Done' : 'Live'}
-                      </span>
-                    </div>
+          <div className="mt-4 space-y-3">
+            {standings.map((player, index) => (
+              <div
+                key={player.id}
+                className="rounded-[1.45rem] border border-slate-200 bg-slate-50/90 p-4 dark:border-white/10 dark:bg-slate-950/45"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-slate-950 dark:text-white">
+                      #{index + 1} {player.displayName}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{player.city}</p>
                   </div>
-                )
-              })}
-            </div>
-          </section>
+                  <span className={cn(
+                    'rounded-full px-3 py-1 text-xs font-medium',
+                    player.completed
+                      ? 'bg-emerald-100/85 text-emerald-950 dark:bg-emerald-400/10 dark:text-emerald-100'
+                      : 'bg-slate-200 text-slate-700 dark:bg-white/8 dark:text-slate-300',
+                  )}
+                  >
+                    {player.completed ? 'Finished' : 'Solving'}
+                  </span>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Score</p>
+                    <p className="mt-1 font-semibold text-slate-950 dark:text-white">{player.score}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Time</p>
+                    <p className="mt-1 font-semibold text-slate-950 dark:text-white">{formatTime(player.timeSeconds)}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Mistakes</p>
+                    <p className="mt-1 font-semibold text-slate-950 dark:text-white">{player.mistakes}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 dark:text-slate-400">Hints</p>
+                    <p className="mt-1 font-semibold text-slate-950 dark:text-white">{player.hintsUsed}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : room.status === 'completed' ? (
+        <section className="rounded-[1.9rem] border border-emerald-200 bg-emerald-100/85 p-6 text-center dark:border-emerald-300/20 dark:bg-emerald-400/10">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white/70 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-100">
+            <CheckCircle2 className="h-7 w-7" />
+          </div>
+          <h2 className="mt-4 font-display text-3xl font-semibold text-slate-950 dark:text-white">
+            Room solved!
+          </h2>
+          <p className="mt-3 text-sm leading-7 text-emerald-950 dark:text-emerald-50">
+            Everyone in this collaborative room is now looking at the completed shared board.
+          </p>
+        </section>
+      ) : null}
+
+      <section className="rounded-[1.8rem] border border-slate-200/90 bg-white/82 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-200/75">Room players</p>
+            <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-300">
+              Live roster for this room.
+            </p>
+          </div>
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-cyan-800 dark:border-white/10 dark:bg-slate-950/55 dark:text-cyan-100">
+            <Users2 className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          {players.map((player) => {
+            const joinedTime = formatJoinedTime(player.createdAt ?? player.joinedAt)
+
+            return (
+              <div
+                key={player.id}
+                className="rounded-[1.4rem] border border-slate-200 bg-slate-50/90 px-4 py-3 dark:border-white/10 dark:bg-slate-950/45"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-slate-950 dark:text-white">
+                      {player.displayName}
+                      {player.userId === currentPlayer?.userId ? ' (You)' : ''}
+                    </p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{player.city}</p>
+                    {joinedTime ? (
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        Joined {joinedTime}
+                      </p>
+                    ) : null}
+                  </div>
+                  <span className={cn(
+                    'rounded-full px-3 py-1 text-xs font-medium',
+                    player.completed
+                      ? 'bg-emerald-100/85 text-emerald-950 dark:bg-emerald-400/10 dark:text-emerald-100'
+                      : 'bg-slate-200 text-slate-700 dark:bg-white/8 dark:text-slate-300',
+                  )}
+                  >
+                    {player.completed ? 'Done' : 'Live'}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
         </div>
       </section>
 

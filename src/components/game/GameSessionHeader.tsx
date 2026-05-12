@@ -33,32 +33,32 @@ export function GameSessionHeader({
   description = 'Generated puzzles now drive the experience, with difficulty-aware sessions that still preserve timer tracking, notes, hints, pause and resume, and saved progress.',
 }: GameSessionHeaderProps) {
   return (
-    <section className="overflow-hidden rounded-[1.9rem] border border-slate-200/90 bg-white/82 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5">
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)] xl:items-start">
+    <section className="overflow-hidden rounded-[1.8rem] border border-slate-200/90 bg-white/82 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-start">
         <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-200/75">{eyebrow}</p>
-          <h1 className="mt-3 font-display text-3xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-4xl">
+          <h1 className="mt-2.5 font-display text-[1.8rem] font-semibold tracking-tight text-slate-950 dark:text-white sm:text-[2.1rem]">
             {title}
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300 sm:text-[15px]">
+          <p className="mt-2.5 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
             {description}
           </p>
 
-          <div className="mt-4 max-w-2xl rounded-[1.5rem] border border-slate-200 bg-slate-50/90 p-4 dark:border-white/10 dark:bg-slate-950/45">
+          <div className="mt-3.5 max-w-2xl rounded-[1.4rem] border border-slate-200 bg-slate-50/90 p-3.5 dark:border-white/10 dark:bg-slate-950/45">
             <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
               Selected session
             </p>
-            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="mt-2.5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <div className="flex items-center gap-2.5">
                   <span className="rounded-full bg-cyan-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-900 dark:bg-cyan-400/14 dark:text-cyan-100">
                     {difficulty}
                   </span>
                 </div>
-                <p className="mt-2.5 font-display text-xl font-semibold text-slate-950 dark:text-white sm:text-2xl">
+                <p className="mt-2 font-display text-lg font-semibold text-slate-950 dark:text-white sm:text-xl">
                   {difficultyLabel}
                 </p>
-                <p className="mt-1.5 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+                <p className="mt-1 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-300">
                   {difficultyDescription}
                 </p>
               </div>
@@ -77,47 +77,47 @@ export function GameSessionHeader({
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:self-stretch">
-          <div className="rounded-[1.4rem] border border-cyan-200/80 bg-gradient-to-br from-cyan-100 via-white to-white p-3.5 dark:border-cyan-300/18 dark:from-cyan-400/14 dark:via-transparent dark:to-transparent">
+        <div className="grid gap-2.5 sm:grid-cols-2 lg:self-stretch">
+          <div className="rounded-[1.25rem] border border-cyan-200/80 bg-gradient-to-br from-cyan-100 via-white to-white p-3 dark:border-cyan-300/18 dark:from-cyan-400/14 dark:via-transparent dark:to-transparent">
             <div className="flex items-center gap-2 text-cyan-800 dark:text-cyan-100">
               <Clock3 className="h-4 w-4" />
               <span className="text-xs uppercase tracking-[0.24em]">Timer</span>
             </div>
-            <p className="mt-2.5 font-display text-3xl font-semibold text-slate-950 dark:text-white">{formattedTime}</p>
-            <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-300">
+            <p className="mt-2 font-display text-[1.7rem] font-semibold text-slate-950 dark:text-white">{formattedTime}</p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
               {isPaused ? 'Paused and ready to resume' : 'Running focus timer'}
             </p>
           </div>
 
-          <div className="rounded-[1.4rem] border border-slate-200 bg-slate-50/90 p-3.5 dark:border-white/10 dark:bg-slate-950/45">
+          <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50/90 p-3 dark:border-white/10 dark:bg-slate-950/45">
             <div className="flex items-center gap-2 text-amber-700 dark:text-amber-100">
               <TriangleAlert className="h-4 w-4" />
               <span className="text-xs uppercase tracking-[0.24em]">Mistakes</span>
             </div>
-            <p className="mt-2.5 font-display text-3xl font-semibold text-slate-950 dark:text-white">{mistakes}</p>
-            <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-300">
+            <p className="mt-2 font-display text-[1.7rem] font-semibold text-slate-950 dark:text-white">{mistakes}</p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
               Wrong entries are counted instantly. Limit: {mistakeLimit}.
             </p>
           </div>
 
-          <div className="rounded-[1.4rem] border border-slate-200 bg-slate-50/90 p-3.5 dark:border-white/10 dark:bg-slate-950/45">
+          <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50/90 p-3 dark:border-white/10 dark:bg-slate-950/45">
             <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-100">
               <Lightbulb className="h-4 w-4" />
               <span className="text-xs uppercase tracking-[0.24em]">Hints used</span>
             </div>
-            <p className="mt-2.5 font-display text-3xl font-semibold text-slate-950 dark:text-white">{hintsUsed}</p>
-            <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-300">Reveal the next correct empty value.</p>
+            <p className="mt-2 font-display text-[1.7rem] font-semibold text-slate-950 dark:text-white">{hintsUsed}</p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Reveal the next correct empty value.</p>
           </div>
 
-          <div className="rounded-[1.4rem] border border-slate-200 bg-slate-50/90 p-3.5 dark:border-white/10 dark:bg-slate-950/45">
+          <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50/90 p-3 dark:border-white/10 dark:bg-slate-950/45">
             <div className="flex items-center gap-2 text-fuchsia-700 dark:text-fuchsia-100">
               <NotebookPen className="h-4 w-4" />
               <span className="text-xs uppercase tracking-[0.24em]">Notes mode</span>
             </div>
-            <p className="mt-2.5 font-display text-2xl font-semibold text-slate-950 dark:text-white">
+            <p className="mt-2 font-display text-[1.45rem] font-semibold text-slate-950 dark:text-white">
               {notesMode ? 'ON' : 'OFF'}
             </p>
-            <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-300">
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
               Press <span className="font-semibold text-slate-950 dark:text-white">N</span> to toggle candidates.
             </p>
           </div>

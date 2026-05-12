@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
+import { buildAchievements, hasUsedAICoach, type AchievementBadge } from '../lib/achievements'
+import { computeDailyStreaks } from '../lib/streaks'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from './useAuth'
 import type { Difficulty } from '../types/sudoku'
 
-type RecentGame = {
+export type RecentGame = {
   id: string
   difficulty: Difficulty
   score: number
@@ -13,7 +15,7 @@ type RecentGame = {
   createdAt: string | null
 }
 
-type ProfileStats = {
+export type ProfileStats = {
   totalCompletedGames: number
   bestTime: number | null
   averageMistakes: number
@@ -22,6 +24,10 @@ type ProfileStats = {
   bestScore: number
   recentGames: RecentGame[]
   gamesByDifficulty: Record<Difficulty, number>
+  achievements: AchievementBadge[]
+  currentDailyStreak: number
+  bestDailyStreak: number
+  lastDailyDate: string | null
 }
 
 const emptyStats: ProfileStats = {
@@ -38,6 +44,10 @@ const emptyStats: ProfileStats = {
     hard: 0,
     expert: 0,
   },
+  achievements: [],
+  currentDailyStreak: 0,
+  bestDailyStreak: 0,
+  lastDailyDate: null,
 }
 
 type GameRow = {
@@ -47,6 +57,7 @@ type GameRow = {
   time_seconds: number | null
   mistakes: number | null
   hints_used: number | null
+  is_daily?: boolean | null
   created_at?: string | null
 }
 
@@ -71,12 +82,14 @@ function getErrorMessage(error: unknown, fallbackMessage: string) {
 export function useProfileStats() {
   const { isAuthenticated, user } = useAuth()
   const [games, setGames] = useState<GameRow[]>([])
+  const [socialSolverCount, setSocialSolverCount] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isAuthenticated || !user || !supabase) {
       setGames([])
+      setSocialSolverCount(0)
       setError(null)
       setLoading(false)
       return
@@ -90,12 +103,18 @@ export function useProfileStats() {
 
     async function loadStats() {
       try {
-        const { data, error: loadError } = await client
-          .from('games')
-          .select('id, difficulty, score, time_seconds, mistakes, hints_used, created_at')
-          .eq('user_id', userId)
-          .eq('completed', true)
-          .order('created_at', { ascending: false })
+        const [{ data, error: loadError }, { count, error: socialError }] = await Promise.all([
+          client
+            .from('games')
+            .select('id, difficulty, score, time_seconds, mistakes, hints_used, is_daily, created_at')
+            .eq('user_id', userId)
+            .eq('completed', true)
+            .order('created_at', { ascending: false }),
+          client
+            .from('online_room_players')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId),
+        ])
 
         if (loadError) {
           throw loadError
@@ -106,12 +125,14 @@ export function useProfileStats() {
         }
 
         setGames((data ?? []) as GameRow[])
+        setSocialSolverCount(socialError ? 0 : (count ?? 0))
       } catch (loadStatsError) {
         if (!isMounted) {
           return
         }
 
         setGames([])
+        setSocialSolverCount(0)
         setError(getErrorMessage(loadStatsError, 'Unable to load profile stats right now.'))
       } finally {
         if (isMounted) {
@@ -129,7 +150,16 @@ export function useProfileStats() {
 
   const stats = useMemo<ProfileStats>(() => {
     if (games.length === 0) {
-      return emptyStats
+      return {
+        ...emptyStats,
+        achievements: buildAchievements({
+          games: [],
+          totalCompletedGames: 0,
+          bestDailyStreak: 0,
+          aiCoachUsed: hasUsedAICoach(),
+          socialSolverCount,
+        }),
+      }
     }
 
     const totalCompletedGames = games.length
@@ -158,6 +188,23 @@ export function useProfileStats() {
       hard: 0,
       expert: 0,
     })
+    const dailyStreakSummary = computeDailyStreaks(
+      games
+        .filter((game) => game.is_daily)
+        .map((game) => game.created_at ?? null),
+    )
+    const achievements = buildAchievements({
+      games: games.map((game) => ({
+        difficulty: game.difficulty,
+        mistakes: game.mistakes ?? 0,
+        timeSeconds: game.time_seconds ?? 0,
+        isDaily: Boolean(game.is_daily),
+      })),
+      totalCompletedGames,
+      bestDailyStreak: dailyStreakSummary.bestDailyStreak,
+      aiCoachUsed: hasUsedAICoach(),
+      socialSolverCount,
+    })
 
     return {
       totalCompletedGames,
@@ -176,8 +223,12 @@ export function useProfileStats() {
         createdAt: game.created_at ?? null,
       })),
       gamesByDifficulty,
+      achievements,
+      currentDailyStreak: dailyStreakSummary.currentDailyStreak,
+      bestDailyStreak: dailyStreakSummary.bestDailyStreak,
+      lastDailyDate: dailyStreakSummary.lastDailyDate,
     }
-  }, [games])
+  }, [games, socialSolverCount])
 
   return {
     stats,

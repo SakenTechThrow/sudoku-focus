@@ -8,6 +8,7 @@ import { HomePage } from '../pages/HomePage'
 import { LeaderboardPage } from '../pages/LeaderboardPage'
 import { OnlinePage } from '../pages/OnlinePage'
 import { OnlineRoomPage } from '../pages/OnlineRoomPage'
+import { OnboardingPage } from '../pages/OnboardingPage'
 import { ProPage } from '../pages/ProPage'
 import { ProfilePage } from '../pages/ProfilePage'
 
@@ -25,6 +26,7 @@ function App() {
             <Route path="/leaderboard" element={<LeaderboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/pro" element={<ProPage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/auth" element={<AuthPage />} />
           </Route>
         </Routes>

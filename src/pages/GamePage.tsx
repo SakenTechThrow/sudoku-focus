@@ -118,7 +118,7 @@ export function GamePage() {
 
   return (
     <>
-      <div className="space-y-4 lg:space-y-5">
+      <div className="space-y-3 lg:space-y-4">
         <GameSessionHeader
           difficulty={difficulty}
           difficultyLabel={difficultyConfig.label}
@@ -163,7 +163,7 @@ export function GamePage() {
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 lg:sticky lg:top-24">
             <GameControlPanel
               difficulty={difficulty}
               selectedCell={selectedCell}

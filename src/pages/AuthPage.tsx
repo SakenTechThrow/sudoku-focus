@@ -48,6 +48,7 @@ export function AuthPage() {
   const [hasCompletedAuthAction, setHasCompletedAuthAction] = useState(false)
   const requestedReturnTo = searchParams.get('returnTo')
   const returnTo = sanitizeReturnTo(requestedReturnTo, '/profile')
+  const hasExplicitReturnTo = Boolean(requestedReturnTo)
   const isOnlineRoomReturn = returnTo.startsWith('/online/')
 
   useEffect(() => {
@@ -100,7 +101,7 @@ export function AuthPage() {
         if (!result.requiresEmailConfirmation) {
           setHasCompletedAuthAction(true)
           window.setTimeout(() => {
-            navigate(returnTo, { replace: true })
+            navigate(hasExplicitReturnTo ? returnTo : '/onboarding', { replace: true })
           }, 500)
         }
 
@@ -154,7 +155,7 @@ export function AuthPage() {
           <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
             <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Next step</p>
             <p className="mt-2 text-sm leading-6 text-slate-200">
-              This foundation is ready for game saves, leaderboards, and synced history later.
+              This foundation is ready for onboarding, game saves, leaderboards, and synced history later.
             </p>
           </div>
         </div>

@@ -1,20 +1,27 @@
+import { useEffect, useState } from 'react'
 import { Brain, LoaderCircle, LogOut, MoonStar, SunMedium } from 'lucide-react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { navItems } from '../../constants/site'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
 import { buildAuthRedirectPath } from '../../lib/authRedirect'
+import { isOnboardingCompleted } from '../../lib/onboarding'
 import { cn } from '../../lib/utils'
 
 export function Navbar() {
   const location = useLocation()
   const { isAuthenticated, loading, profile, signOut } = useAuth()
   const { theme, toggleTheme } = useTheme()
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(true)
   const ThemeIcon = theme === 'dark' ? SunMedium : MoonStar
   const authLink = buildAuthRedirectPath(
     `${location.pathname}${location.search}`,
     '/profile',
   )
+
+  useEffect(() => {
+    setHasCompletedOnboarding(isOnboardingCompleted())
+  }, [location.pathname, location.search])
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-900/10 bg-white/72 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/70">
@@ -99,6 +106,22 @@ export function Navbar() {
                 }
               >
                 Profile
+              </NavLink>
+            ) : null}
+
+            {!hasCompletedOnboarding ? (
+              <NavLink
+                to="/onboarding"
+                className={({ isActive }) =>
+                  cn(
+                    'rounded-full px-4 py-2 text-sm font-medium transition',
+                    isActive
+                      ? 'bg-cyan-100 text-cyan-950 shadow-[0_10px_30px_rgba(14,116,144,0.12)] dark:bg-cyan-400/14 dark:text-cyan-100 dark:shadow-none'
+                      : 'text-cyan-800 hover:bg-cyan-50 hover:text-cyan-950 dark:text-cyan-100 dark:hover:bg-cyan-400/10 dark:hover:text-white',
+                  )
+                }
+              >
+                Complete onboarding
               </NavLink>
             ) : null}
           </nav>

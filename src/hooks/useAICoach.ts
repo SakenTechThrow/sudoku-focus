@@ -5,6 +5,7 @@ import {
   getGeneralStrategyTip,
   getPossibleValues,
 } from '../lib/aiCoach'
+import { markAICoachUsed } from '../lib/achievements'
 import type { CandidateValue, CellPosition, SudokuBoard } from '../types/sudoku'
 
 export type AICoachStatus = 'idle' | 'fixed' | 'empty' | 'filled' | 'incorrect'
@@ -31,6 +32,7 @@ export function useAICoach({
   const [focusSignal, setFocusSignal] = useState(0)
 
   function refreshExplanation() {
+    markAICoachUsed()
     setFocusSignal((current) => current + 1)
   }
 
@@ -55,6 +57,15 @@ export function useAICoach({
       refreshExplanation()
     }
   })
+
+  useEffect(() => {
+    if (!selectedCell) {
+      return
+    }
+
+    // Selecting a cell is a meaningful coach interaction because the panel updates immediately.
+    markAICoachUsed()
+  }, [selectedCell])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)

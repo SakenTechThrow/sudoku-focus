@@ -1,12 +1,24 @@
+import { useEffect } from 'react'
 import { ArrowRight, Sparkles } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { BoardPreview } from '../components/board/BoardPreview'
 import { FeatureCard } from '../components/coach/FeatureCard'
 import { LeaderboardPreview } from '../components/leaderboard/LeaderboardPreview'
 import { ProgressSnapshot } from '../components/profile/ProgressSnapshot'
 import { homeFeatures } from '../constants/site'
+import { isOnboardingCompleted } from '../lib/onboarding'
 
 export function HomePage() {
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (isOnboardingCompleted()) {
+      return
+    }
+
+    navigate('/onboarding', { replace: true })
+  }, [navigate])
+
   return (
     <div className="space-y-8 lg:space-y-10">
       <section className="relative overflow-hidden rounded-[2rem] border border-slate-900/10 bg-white/82 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_24px_80px_rgba(2,8,24,0.45)] sm:p-8 lg:p-10">
@@ -60,6 +72,10 @@ export function HomePage() {
                 <p className="mt-2 font-display text-3xl font-semibold text-slate-950 dark:text-white">Startup-ready</p>
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Structured to grow into auth, analytics, and Supabase.</p>
               </div>
+            </div>
+
+            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-100/70 px-4 py-2 text-sm font-medium text-amber-900 dark:border-amber-300/20 dark:bg-amber-400/10 dark:text-amber-100">
+              Unlock badges as you train daily.
             </div>
           </div>
 
