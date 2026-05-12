@@ -31,6 +31,9 @@ const ONLINE_ROOM_SCHEMA_MIGRATION_MESSAGE =
 const ONLINE_ROOM_PLAYER_SCHEMA_MIGRATION_MESSAGE =
   'Online room player schema needs migration. Please add created_at or use joined_at.'
 const ROOM_NOT_FOUND_MESSAGE = 'Room not found or expired.'
+type UseOnlineRoomOptions = {
+  enabled?: boolean
+}
 
 type OnlineRoomRow = {
   id: string
@@ -326,11 +329,12 @@ function getDisplayName(email: string | null | undefined, username: string | nul
   return username?.trim() || email?.split('@')[0] || 'Sudoku Focus Player'
 }
 
-export function useOnlineRoom(roomCode?: string) {
+export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions) {
   const { isAuthenticated, profile, user } = useAuth()
+  const isEnabled = options?.enabled ?? true
   const [room, setRoom] = useState<OnlineRoom | null>(null)
   const [players, setPlayers] = useState<OnlineRoomPlayer[]>([])
-  const [loading, setLoading] = useState(Boolean(roomCode))
+  const [loading, setLoading] = useState(Boolean(roomCode && isEnabled))
   const [actionLoading, setActionLoading] = useState(false)
   const [membershipLoading, setMembershipLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -535,7 +539,7 @@ export function useOnlineRoom(roomCode?: string) {
   }, [fetchPlayersByRoomId, profile?.city, profile?.username, user])
 
   const refetch = useCallback(async () => {
-    if (!normalizedRoomCode) {
+    if (!normalizedRoomCode || !isEnabled) {
       return
     }
 
@@ -548,7 +552,7 @@ export function useOnlineRoom(roomCode?: string) {
     } finally {
       setLoading(false)
     }
-  }, [loadRoomState, normalizedRoomCode])
+  }, [isEnabled, loadRoomState, normalizedRoomCode])
 
   const createRoom = useCallback(async ({
     mode,
@@ -1048,16 +1052,16 @@ export function useOnlineRoom(roomCode?: string) {
   }, [currentPlayer, room, updateCurrentPlayer])
 
   useEffect(() => {
-    if (!normalizedRoomCode) {
+    if (!normalizedRoomCode || !isEnabled) {
       setLoading(false)
       return
     }
 
     void refetch()
-  }, [normalizedRoomCode, refetch])
+  }, [isEnabled, normalizedRoomCode, refetch])
 
   useEffect(() => {
-    if (!supabase || !normalizedRoomCode) {
+    if (!supabase || !normalizedRoomCode || !isEnabled) {
       return undefined
     }
 
@@ -1081,10 +1085,10 @@ export function useOnlineRoom(roomCode?: string) {
     return () => {
       void client.removeChannel(roomChannel)
     }
-  }, [normalizedRoomCode, refetch])
+  }, [isEnabled, normalizedRoomCode, refetch])
 
   useEffect(() => {
-    if (!supabase || !room?.id) {
+    if (!supabase || !room?.id || !isEnabled) {
       return undefined
     }
 
@@ -1108,10 +1112,10 @@ export function useOnlineRoom(roomCode?: string) {
     return () => {
       void client.removeChannel(playersChannel)
     }
-  }, [refetch, room?.id])
+  }, [isEnabled, refetch, room?.id])
 
   useEffect(() => {
-    if (!room || !isAuthenticated || !user) {
+    if (!isEnabled || !room || !isAuthenticated || !user) {
       joinedMembershipKeyRef.current = null
       return
     }
@@ -1128,7 +1132,7 @@ export function useOnlineRoom(roomCode?: string) {
       joinedMembershipKeyRef.current = null
       setError(getErrorMessage(membershipError, 'Unable to join this room right now.'))
     })
-  }, [ensurePlayerMembership, isAuthenticated, room, user])
+  }, [ensurePlayerMembership, isAuthenticated, isEnabled, room, user])
 
   useEffect(() => {
     if (remoteBoardKey === syncedBoardKeyRef.current) {

@@ -1,14 +1,20 @@
 import { Brain, LoaderCircle, LogOut, MoonStar, SunMedium } from 'lucide-react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { navItems } from '../../constants/site'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
+import { buildAuthRedirectPath } from '../../lib/authRedirect'
 import { cn } from '../../lib/utils'
 
 export function Navbar() {
+  const location = useLocation()
   const { isAuthenticated, loading, profile, signOut } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const ThemeIcon = theme === 'dark' ? SunMedium : MoonStar
+  const authLink = buildAuthRedirectPath(
+    `${location.pathname}${location.search}`,
+    '/profile',
+  )
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-900/10 bg-white/72 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/70">
@@ -51,7 +57,7 @@ export function Navbar() {
               </Link>
             ) : (
               <Link
-                to="/auth"
+                to={authLink}
                 className="inline-flex items-center rounded-full border border-slate-900/10 bg-white/75 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-cyan-300/30 hover:bg-white/90 hover:text-slate-950 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10 dark:hover:text-white xl:hidden"
               >
                 Login
@@ -109,7 +115,7 @@ export function Navbar() {
             </button>
           ) : (
             <Link
-              to="/auth"
+              to={authLink}
               className="hidden rounded-full border border-cyan-300/30 bg-cyan-400/12 px-4 py-2 text-sm font-semibold text-cyan-800 transition hover:bg-cyan-400/18 dark:text-cyan-100 dark:hover:bg-cyan-400/20 xl:inline-flex"
             >
               Login

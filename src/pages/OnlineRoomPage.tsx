@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { CheckCircle2, Copy, Crown, Users2 } from 'lucide-react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
 import { NumberPad } from '../components/board/NumberPad'
 import { SudokuBoard } from '../components/board/SudokuBoard'
 import { AICoachPanel } from '../components/coach/AICoachPanel'
@@ -9,6 +9,7 @@ import { difficultyConfig } from '../constants/difficulty'
 import { useAICoach } from '../hooks/useAICoach'
 import { useAuth } from '../hooks/useAuth'
 import { useOnlineRoom } from '../hooks/useOnlineRoom'
+import { buildAuthRedirectPath } from '../lib/authRedirect'
 import { cn } from '../lib/utils'
 
 function formatOnlineMode(mode: 'collaborative' | 'race') {
@@ -42,7 +43,9 @@ function formatJoinedTime(timestamp: string | null | undefined) {
 
 export function OnlineRoomPage() {
   const { roomCode } = useParams<{ roomCode: string }>()
-  const { isAuthenticated } = useAuth()
+  const location = useLocation()
+  const { isAuthenticated, loading: authLoading } = useAuth()
+  const returnTo = location.pathname + location.search
   const {
     room,
     players,
@@ -76,7 +79,7 @@ export function OnlineRoomPage() {
     revealHint,
     checkSolution,
     resetBoard,
-  } = useOnlineRoom(roomCode)
+  } = useOnlineRoom(roomCode, { enabled: !authLoading && isAuthenticated })
   const coach = useAICoach({
     board,
     solution,
@@ -123,7 +126,24 @@ export function OnlineRoomPage() {
     )
   }
 
-  if (loading && !room) {
+  if (authLoading) {
+    return (
+      <section className="rounded-[2rem] border border-slate-200/90 bg-white/82 p-8 text-center shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)]">
+        <h1 className="font-display text-3xl font-semibold text-slate-950 dark:text-white">
+          Checking your session...
+        </h1>
+        <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+          Making sure your Sudoku Focus account is ready before joining the room.
+        </p>
+      </section>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to={buildAuthRedirectPath(returnTo)} replace />
+  }
+
+  if (!room && (loading || !error)) {
     return (
       <section className="rounded-[2rem] border border-slate-200/90 bg-white/82 p-8 text-center shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)]">
         <h1 className="font-display text-3xl font-semibold text-slate-950 dark:text-white">

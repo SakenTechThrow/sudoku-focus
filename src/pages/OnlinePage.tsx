@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { difficultyConfig, difficultyOrder } from '../constants/difficulty'
 import { useAuth } from '../hooks/useAuth'
 import { useOnlineRoom } from '../hooks/useOnlineRoom'
+import { buildAuthRedirectPath } from '../lib/authRedirect'
 import { cn } from '../lib/utils'
 import type { Difficulty } from '../types/sudoku'
 import type { OnlineMode } from '../types/online'
@@ -41,6 +42,11 @@ export function OnlinePage() {
   async function handleCreateRoom() {
     setCreateFeedback(null)
 
+    if (!isAuthenticated) {
+      navigate(buildAuthRedirectPath('/online'))
+      return
+    }
+
     const result = await createRoom({ mode, difficulty })
 
     if (!result.ok) {
@@ -53,6 +59,11 @@ export function OnlinePage() {
 
   async function handleJoinRoom() {
     setJoinFeedback(null)
+
+    if (!isAuthenticated) {
+      navigate(buildAuthRedirectPath('/online'))
+      return
+    }
 
     const result = await joinRoom(roomCode)
 
@@ -210,7 +221,7 @@ export function OnlinePage() {
             ) : (
               <div className="rounded-[1.6rem] border border-amber-200 bg-amber-100/80 p-4 text-sm text-amber-950 dark:border-amber-300/20 dark:bg-amber-400/10 dark:text-amber-50">
                 Sign in to create an online room.
-                <Link to="/auth" className="ml-2 font-semibold underline underline-offset-4">
+                <Link to={buildAuthRedirectPath('/online')} className="ml-2 font-semibold underline underline-offset-4">
                   Go to login
                 </Link>
               </div>
@@ -225,7 +236,7 @@ export function OnlinePage() {
             <button
               type="button"
               onClick={() => void handleCreateRoom()}
-              disabled={actionLoading || !isAuthenticated}
+              disabled={actionLoading}
               className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-[color:#f8fbff] shadow-[0_12px_30px_rgba(15,23,42,0.18)] transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-50"
             >
               Create Room

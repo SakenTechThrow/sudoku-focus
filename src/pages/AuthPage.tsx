@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { ArrowRight, LoaderCircle, ShieldCheck } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { sanitizeReturnTo } from '../lib/authRedirect'
 import type { AuthActionResult } from '../types/user'
 
 function isValidEmail(email: string) {
@@ -36,6 +37,7 @@ export function AuthPage() {
     signUp,
   } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -43,12 +45,16 @@ export function AuthPage() {
   const [city, setCity] = useState('Almaty')
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [hasCompletedAuthAction, setHasCompletedAuthAction] = useState(false)
+  const requestedReturnTo = searchParams.get('returnTo')
+  const returnTo = sanitizeReturnTo(requestedReturnTo, '/profile')
+  const isOnlineRoomReturn = returnTo.startsWith('/online/')
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/profile', { replace: true })
+    if (!loading && isAuthenticated && !hasCompletedAuthAction) {
+      navigate(returnTo, { replace: true })
     }
-  }, [isAuthenticated, navigate])
+  }, [hasCompletedAuthAction, isAuthenticated, loading, navigate, returnTo])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -92,8 +98,9 @@ export function AuthPage() {
         setSuccessMessage(result.message)
 
         if (!result.requiresEmailConfirmation) {
+          setHasCompletedAuthAction(true)
           window.setTimeout(() => {
-            navigate('/profile', { replace: true })
+            navigate(returnTo, { replace: true })
           }, 500)
         }
 
@@ -102,9 +109,10 @@ export function AuthPage() {
 
       result = await signIn(normalizedEmail, password)
       setSuccessMessage(result.message)
+      setHasCompletedAuthAction(true)
 
       window.setTimeout(() => {
-        navigate('/game', { replace: true })
+        navigate(returnTo, { replace: true })
       }, 400)
     } catch (submissionError) {
       setError(getErrorMessage(submissionError))
@@ -123,6 +131,12 @@ export function AuthPage() {
             ? 'Sign in to keep your progress connected to your profile, leaderboard presence, and future analytics.'
             : 'Start with an account so Sudoku Focus can personalize your profile, city ranking, and long-term progress.'}
         </p>
+
+        {isOnlineRoomReturn ? (
+          <div className="mt-5 inline-flex rounded-full border border-cyan-300/20 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-100">
+            Sign in to join your friend&apos;s Sudoku room.
+          </div>
+        ) : null}
 
         <div className="mt-8 grid gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
