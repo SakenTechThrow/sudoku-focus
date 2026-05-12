@@ -101,7 +101,8 @@ export function OnlineRoomPage() {
 
   async function handleCopyInviteLink() {
     try {
-      await navigator.clipboard.writeText(window.location.href)
+      const inviteLink = `${window.location.origin}/online/${roomCode}`
+      await navigator.clipboard.writeText(inviteLink)
       setCopyFeedback('Invite link copied.')
       window.setTimeout(() => setCopyFeedback(null), 2500)
     } catch {
@@ -136,13 +137,17 @@ export function OnlineRoomPage() {
   }
 
   if (!room) {
+    const roomErrorMessage = !error || error === 'Room not found. Check the code and try again.'
+      ? 'Room not found or expired.'
+      : error
+
     return (
       <section className="rounded-[2rem] border border-rose-200 bg-rose-100/85 p-8 text-center dark:border-rose-300/20 dark:bg-rose-400/10">
         <h1 className="font-display text-3xl font-semibold text-slate-950 dark:text-white">
-          Room not found
+          Room not found or expired.
         </h1>
         <p className="mt-3 text-sm leading-7 text-rose-950 dark:text-rose-100">
-          {error ?? 'This room code does not exist or is no longer active.'}
+          {roomErrorMessage}
         </p>
       </section>
     )

@@ -30,6 +30,7 @@ const ONLINE_ROOM_SCHEMA_MIGRATION_MESSAGE =
   'Online room database schema needs migration. Please run the latest SQL migration.'
 const ONLINE_ROOM_PLAYER_SCHEMA_MIGRATION_MESSAGE =
   'Online room player schema needs migration. Please add created_at or use joined_at.'
+const ROOM_NOT_FOUND_MESSAGE = 'Room not found or expired.'
 
 type OnlineRoomRow = {
   id: string
@@ -467,7 +468,7 @@ export function useOnlineRoom(roomCode?: string) {
     if (!loadedRoom) {
       setRoom(null)
       setPlayers([])
-      throw new Error('Room not found. Check the code and try again.')
+      throw new Error(ROOM_NOT_FOUND_MESSAGE)
     }
 
     const nextPlayers = await fetchPlayersByRoomId(loadedRoom.id)
@@ -649,7 +650,7 @@ export function useOnlineRoom(roomCode?: string) {
       const targetRoom = await fetchRoomByCode(targetRoomCode)
 
       if (!targetRoom) {
-        return { ok: false, message: 'Room not found. Check the code and try again.' }
+        return { ok: false, message: ROOM_NOT_FOUND_MESSAGE }
       }
 
       if (user) {
