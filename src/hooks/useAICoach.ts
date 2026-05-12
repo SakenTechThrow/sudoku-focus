@@ -59,7 +59,7 @@ export function useAICoach({
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleKeyDown])
+  }, [])
 
   const coachState = useMemo(() => {
     if (!selectedCell) {

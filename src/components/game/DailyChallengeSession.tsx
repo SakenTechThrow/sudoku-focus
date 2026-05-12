@@ -13,6 +13,7 @@ import { useGamePersistence } from '../../hooks/useGamePersistence'
 import { useLeaderboard } from '../../hooks/useLeaderboard'
 import { useRewardedHint } from '../../hooks/useRewardedHint'
 import { useSudokuGame } from '../../hooks/useSudokuGame'
+import { buildAuthRedirectPath } from '../../lib/authRedirect'
 import { calculateScore } from '../../lib/scoring'
 import type { DailyChallenge } from '../../types/sudoku'
 import type { SaveGameResult } from '../../types/user'
@@ -277,7 +278,7 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
               </button>
             ) : (
               <Link
-                to="/auth"
+                to={buildAuthRedirectPath('/daily')}
                 className="rounded-2xl border border-cyan-300/25 bg-cyan-400/10 px-4 py-3 text-center text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/16"
               >
                 Sign in to save progress

@@ -67,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [profileError, setProfileError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(Boolean(supabase))
 
   const ensureProfile = useCallback(async (
     nextUser: User,
@@ -77,10 +77,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      if (import.meta.env.DEV) {
-        console.log('Ensuring profile for user:', nextUser.id)
-      }
-
       const {
         data: existingProfile,
         error: existingProfileError,
@@ -100,15 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: existingProfile.email ?? nextUser.email ?? null,
         } as UserProfile)
 
-        if (import.meta.env.DEV) {
-          console.log('Profile found:', normalizedProfile)
-        }
-
         return normalizedProfile
-      }
-
-      if (import.meta.env.DEV) {
-        console.log('Creating fallback profile for:', nextUser.id)
       }
 
       const fallbackUsername =
@@ -160,17 +148,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             xp: 0,
           })
 
-      if (import.meta.env.DEV) {
-        console.log('Profile found:', normalizedCreatedProfile)
-      }
-
       return normalizedCreatedProfile
     } catch (error) {
       if (import.meta.env.DEV) {
         console.error('Profile ensure error:', error)
       }
 
-      throw new Error(getErrorMessage(error, 'Unable to load your profile right now.'))
+      throw new Error(getErrorMessage(error, 'Unable to load your profile right now.'), {
+        cause: error,
+      })
     }
   }, [])
 
@@ -188,7 +174,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!supabase) {
-      setLoading(false)
       return undefined
     }
 
@@ -320,11 +305,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         message: 'Account created. You are now signed in.',
       }
     } catch (error) {
-      throw new Error(getErrorMessage(error, 'Unable to create your account right now.'))
+      throw new Error(getErrorMessage(error, 'Unable to create your account right now.'), {
+        cause: error,
+      })
     } finally {
       setLoading(false)
     }
-  }, [loadProfile])
+  }, [ensureProfile, loadProfile])
 
   const signIn = useCallback<AuthContextValue['signIn']>(async (email, password) => {
     if (!supabase) {
@@ -350,7 +337,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         message: 'Signed in successfully.',
       }
     } catch (error) {
-      throw new Error(getErrorMessage(error, 'Unable to sign in right now.'))
+      throw new Error(getErrorMessage(error, 'Unable to sign in right now.'), {
+        cause: error,
+      })
     } finally {
       setLoading(false)
     }

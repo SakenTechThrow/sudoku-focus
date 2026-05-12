@@ -465,7 +465,7 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleKeyDown])
+  }, [])
 
   useEffect(() => {
     const gameState: PersistedSudokuGameState = {
@@ -495,13 +495,6 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
     notesMode,
     saveGameState,
   ])
-
-  useEffect(() => {
-    if (completed) {
-      setIsPaused(false)
-    }
-  }, [completed])
-
   return {
     difficulty,
     difficultyConfig: currentDifficultyConfig,

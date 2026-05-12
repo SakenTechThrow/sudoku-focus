@@ -1143,6 +1143,8 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     setLocalBoard(cloneBoard(boardSource))
   }, [boardSource, remoteBoardKey])
 
+  // Reset session-scoped UI only when the active room or player identity changes.
+  // Including board/player stat objects here would clear notes and selection on every realtime update.
   useEffect(() => {
     if (!room) {
       setLocalBoard(cloneBoard(EMPTY_BOARD))
@@ -1176,7 +1178,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     setHintsUsed(0)
     setCompleted(roomSolved)
     setSeconds(0)
-  }, [currentPlayer?.id, room?.id, room?.mode])
+  }, [currentPlayer?.id, room?.id, room?.mode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!room) {
