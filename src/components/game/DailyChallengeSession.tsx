@@ -5,6 +5,7 @@ import { NFactorialRewardedAdModal } from '../ads/NFactorialRewardedAdModal'
 import { SudokuBoard } from '../board/SudokuBoard'
 import { AICoachPanel } from '../coach/AICoachPanel'
 import { LeaderboardTable } from '../leaderboard/LeaderboardTable'
+import { ShareResultCard } from '../share/ShareResultCard'
 import { GameControlPanel } from './GameControlPanel'
 import { GameSessionHeader } from './GameSessionHeader'
 import { useAICoach } from '../../hooks/useAICoach'
@@ -115,6 +116,9 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
     mistakes,
     hintsUsed,
   }), [difficulty, hintsUsed, mistakes, timerSeconds])
+  const shareUrl = typeof window === 'undefined'
+    ? '/daily'
+    : `${window.location.origin}/daily`
 
   useEffect(() => {
     setSaveState(null)
@@ -306,6 +310,17 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
               {saveState.ok ? ` Score saved: ${saveState.score}.` : ''}
             </div>
           ) : null}
+
+          <ShareResultCard
+            mode="daily"
+            difficulty={difficulty}
+            timeSeconds={timerSeconds}
+            mistakes={mistakes}
+            hintsUsed={hintsUsed}
+            score={scoreEstimate}
+            url={shareUrl}
+            className="mt-5"
+          />
         </section>
       ) : null}
 

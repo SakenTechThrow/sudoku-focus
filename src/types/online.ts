@@ -4,6 +4,8 @@ export type OnlineMode = 'collaborative' | 'race'
 
 export type OnlineRoomStatus = 'active' | 'completed'
 
+export type OnlineSyncStatus = 'connected' | 'syncing' | 'error'
+
 export type OnlineRoom = {
   id: string
   hostUserId: string

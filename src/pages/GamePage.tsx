@@ -6,6 +6,7 @@ import { SudokuBoard } from '../components/board/SudokuBoard'
 import { AICoachPanel } from '../components/coach/AICoachPanel'
 import { GameControlPanel } from '../components/game/GameControlPanel'
 import { GameSessionHeader } from '../components/game/GameSessionHeader'
+import { ShareResultCard } from '../components/share/ShareResultCard'
 import { useAICoach } from '../hooks/useAICoach'
 import { useAuth } from '../hooks/useAuth'
 import { useGamePersistence } from '../hooks/useGamePersistence'
@@ -77,6 +78,9 @@ export function GamePage() {
     mistakes,
     hintsUsed,
   })
+  const shareUrl = typeof window === 'undefined'
+    ? '/game'
+    : `${window.location.origin}/game`
 
   useEffect(() => {
     if (completed) {
@@ -266,6 +270,16 @@ export function GamePage() {
                 ) : null}
               </div>
             </div>
+            <ShareResultCard
+              mode="game"
+              difficulty={difficulty}
+              timeSeconds={timerSeconds}
+              mistakes={mistakes}
+              hintsUsed={hintsUsed}
+              score={scoreEstimate}
+              url={shareUrl}
+              className="mt-5 text-left"
+            />
             <div className="mt-6 grid gap-3">
               <button
                 type="button"

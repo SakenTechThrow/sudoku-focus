@@ -22,6 +22,7 @@ import type {
   OnlineRoom,
   OnlineRoomPlayer,
   OnlineRoomStatus,
+  OnlineSyncStatus,
 } from '../types/online'
 
 const EMPTY_BOARD = createEmptyBoard()
@@ -31,6 +32,8 @@ const ONLINE_ROOM_SCHEMA_MIGRATION_MESSAGE =
 const ONLINE_ROOM_PLAYER_SCHEMA_MIGRATION_MESSAGE =
   'Online room player schema needs migration. Please add created_at or use joined_at.'
 const ROOM_NOT_FOUND_MESSAGE = 'Room not found or expired.'
+const SHARED_BOARD_SYNC_ERROR_MESSAGE =
+  'Could not sync the shared board. Please refresh or try again.'
 type UseOnlineRoomOptions = {
   enabled?: boolean
 }
@@ -48,6 +51,7 @@ type OnlineRoomRow = {
   status: string | null
   winner_user_id: string | null
   created_at: string | null
+  updated_at?: string | null
 }
 
 type OnlineRoomPlayerRow = {
@@ -219,6 +223,22 @@ function isOnlineRoomPlayerTimestampSchemaError(error: unknown) {
   )
 }
 
+function isOnlineRoomUpdatedAtSchemaError(error: unknown) {
+  const { code, combined } = getSupabaseErrorContext(error)
+  const mentionsUpdatedAt = combined.includes('online_rooms.updated_at')
+    || (combined.includes('online_rooms') && combined.includes('updated_at'))
+  const mentionsSchemaIssue = combined.includes('schema cache')
+    || combined.includes('could not find')
+    || combined.includes('column')
+    || combined.includes('does not exist')
+
+  return mentionsUpdatedAt && (
+    code === '42703'
+    || code === 'PGRST204'
+    || mentionsSchemaIssue
+  )
+}
+
 function getErrorMessage(error: unknown, fallbackMessage: string) {
   if (isOnlineRoomPlayerTimestampSchemaError(error)) {
     return ONLINE_ROOM_PLAYER_SCHEMA_MIGRATION_MESSAGE
@@ -329,6 +349,45 @@ function getDisplayName(email: string | null | undefined, username: string | nul
   return username?.trim() || email?.split('@')[0] || 'Sudoku Focus Player'
 }
 
+function toRoomRow(room: OnlineRoom): OnlineRoomRow {
+  return {
+    id: room.id,
+    host_user_id: room.hostUserId,
+    room_code: room.roomCode,
+    mode: room.mode,
+    difficulty: room.difficulty,
+    puzzle: room.puzzle,
+    solution: room.solution,
+    shared_board: room.sharedBoard,
+    board: room.sharedBoard,
+    status: room.status,
+    winner_user_id: room.winnerUserId,
+    created_at: room.createdAt,
+  }
+}
+
+function mergeRealtimeRoom(currentRoom: OnlineRoom, partialRow: Partial<OnlineRoomRow>) {
+  return normalizeRoom({
+    ...toRoomRow(currentRoom),
+    ...partialRow,
+    puzzle: isSudokuBoard(partialRow.puzzle) ? partialRow.puzzle : currentRoom.puzzle,
+    solution: isSudokuBoard(partialRow.solution) ? partialRow.solution : currentRoom.solution,
+    shared_board: isSudokuBoard(partialRow.shared_board) ? partialRow.shared_board : currentRoom.sharedBoard,
+    board: isSudokuBoard(partialRow.board) ? partialRow.board : currentRoom.sharedBoard,
+    status: isOnlineRoomStatus(partialRow.status) ? partialRow.status : currentRoom.status,
+    mode: isOnlineMode(partialRow.mode) ? partialRow.mode : currentRoom.mode,
+    difficulty: isDifficulty(partialRow.difficulty) ? partialRow.difficulty : currentRoom.difficulty,
+    winner_user_id:
+      typeof partialRow.winner_user_id === 'string' || partialRow.winner_user_id === null
+        ? partialRow.winner_user_id
+        : currentRoom.winnerUserId,
+    created_at:
+      typeof partialRow.created_at === 'string' || partialRow.created_at === null
+        ? partialRow.created_at
+        : currentRoom.createdAt,
+  })
+}
+
 export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions) {
   const { isAuthenticated, profile, user } = useAuth()
   const isEnabled = options?.enabled ?? true
@@ -338,6 +397,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
   const [actionLoading, setActionLoading] = useState(false)
   const [membershipLoading, setMembershipLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [syncStatus, setSyncStatus] = useState<OnlineSyncStatus>('connected')
   const [localBoard, setLocalBoard] = useState<SudokuBoard>(() => cloneBoard(EMPTY_BOARD))
   const [notes, setNotes] = useState<NotesBoard>(() => createEmptyNotesBoard())
   const [selectedCell, setSelectedCell] = useState<CellPosition | null>(null)
@@ -350,6 +410,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
   const [isTimerRunning, setIsTimerRunning] = useState(false)
   const joinedMembershipKeyRef = useRef<string | null>(null)
   const syncedBoardKeyRef = useRef('')
+  const roomRef = useRef<OnlineRoom | null>(null)
   const normalizedRoomCode = roomCode?.trim().toUpperCase() ?? null
 
   const currentPlayer = useMemo(
@@ -496,6 +557,29 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
       throw updateError
     }
   }, [currentPlayer])
+
+  const applyCollaborativeBoardLocally = useCallback((
+    nextBoard: SudokuBoard,
+    nextStatus?: OnlineRoomStatus,
+  ) => {
+    setLocalBoard(cloneBoard(nextBoard))
+    syncedBoardKeyRef.current = JSON.stringify(nextBoard)
+
+    setRoom((currentRoom) => {
+      if (!currentRoom || currentRoom.mode !== 'collaborative') {
+        return currentRoom
+      }
+
+      const nextRoom: OnlineRoom = {
+        ...currentRoom,
+        sharedBoard: cloneBoard(nextBoard),
+        status: nextStatus ?? currentRoom.status,
+      }
+
+      roomRef.current = nextRoom
+      return nextRoom
+    })
+  }, [])
 
   const ensurePlayerMembership = useCallback(async (targetRoom: OnlineRoom) => {
     if (!supabase || !user) {
@@ -743,13 +827,32 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     }
 
     const nextStatus = isSolved(nextBoard, room.solution) ? 'completed' : room.status
-    const { error: boardError } = await supabase
+    const payload: Record<string, unknown> = {
+      shared_board: nextBoard,
+      board: nextBoard,
+      status: nextStatus,
+      updated_at: new Date().toISOString(),
+    }
+
+    let { error: boardError } = await supabase
       .from('online_rooms')
-      .update({
-        shared_board: nextBoard,
-        status: nextStatus,
-      })
+      .update(payload)
       .eq('id', room.id)
+
+    if (boardError && isOnlineRoomUpdatedAtSchemaError(boardError)) {
+      const retryPayload: Record<string, unknown> = {
+        shared_board: nextBoard,
+        board: nextBoard,
+        status: nextStatus,
+      }
+
+      const retryResult = await supabase
+        .from('online_rooms')
+        .update(retryPayload)
+        .eq('id', room.id)
+
+      boardError = retryResult.error
+    }
 
     if (boardError) {
       throw boardError
@@ -822,7 +925,15 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
 
     try {
       if (room.mode === 'collaborative') {
+        if (import.meta.env.DEV) {
+          console.log('Updating shared board cell:', { row, col, value })
+        }
+
+        setSyncStatus('syncing')
+        applyCollaborativeBoardLocally(nextBoard, isSolved(nextBoard, room.solution) ? 'completed' : room.status)
         await updateSharedBoard(nextBoard)
+        setSyncStatus('connected')
+        setError(null)
 
         if (isSolved(nextBoard, room.solution)) {
           setCompleted(true)
@@ -840,9 +951,16 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
         }
       }
     } catch (setCellValueError) {
-      setError(getErrorMessage(setCellValueError, 'Unable to sync the latest move right now.'))
+      if (import.meta.env.DEV) {
+        console.error('Online room sync error:', setCellValueError)
+      }
+
+      setSyncStatus('error')
+      setError(SHARED_BOARD_SYNC_ERROR_MESSAGE)
+      void refetch()
     }
   }, [
+    applyCollaborativeBoardLocally,
     canEdit,
     finishRace,
     fixedCells,
@@ -852,6 +970,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     notes,
     notesMode,
     persistRaceState,
+    refetch,
     room,
     selectedCell,
     updateSharedBoard,
@@ -876,20 +995,36 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
 
     try {
       if (room.mode === 'collaborative') {
+        if (import.meta.env.DEV) {
+          console.log('Updating shared board cell:', { row, col, value: 0 })
+        }
+
+        setSyncStatus('syncing')
+        applyCollaborativeBoardLocally(nextBoard, room.status)
         await updateSharedBoard(nextBoard)
+        setSyncStatus('connected')
+        setError(null)
       } else {
         await persistRaceState(nextBoard, mistakes, hintsUsed)
       }
     } catch (clearCellError) {
-      setError(getErrorMessage(clearCellError, 'Unable to clear this value right now.'))
+      if (import.meta.env.DEV) {
+        console.error('Online room sync error:', clearCellError)
+      }
+
+      setSyncStatus('error')
+      setError(SHARED_BOARD_SYNC_ERROR_MESSAGE)
+      void refetch()
     }
   }, [
+    applyCollaborativeBoardLocally,
     canEdit,
     fixedCells,
     hintsUsed,
     localBoard,
     mistakes,
     persistRaceState,
+    refetch,
     room,
     selectedCell,
     updateSharedBoard,
@@ -920,7 +1055,19 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
 
         try {
           if (room.mode === 'collaborative') {
+            if (import.meta.env.DEV) {
+              console.log('Updating shared board cell:', {
+                row,
+                col,
+                value: room.solution[row][col],
+              })
+            }
+
+            setSyncStatus('syncing')
+            applyCollaborativeBoardLocally(nextBoard, isSolved(nextBoard, room.solution) ? 'completed' : room.status)
             await updateSharedBoard(nextBoard)
+            setSyncStatus('connected')
+            setError(null)
 
             if (isSolved(nextBoard, room.solution)) {
               setCompleted(true)
@@ -938,7 +1085,13 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
             }
           }
         } catch (hintError) {
-          setError(getErrorMessage(hintError, 'Unable to reveal a synced hint right now.'))
+          if (import.meta.env.DEV) {
+            console.error('Online room sync error:', hintError)
+          }
+
+          setSyncStatus('error')
+          setError(SHARED_BOARD_SYNC_ERROR_MESSAGE)
+          void refetch()
         }
 
         return true
@@ -947,6 +1100,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
 
     return false
   }, [
+    applyCollaborativeBoardLocally,
     canEdit,
     finishRace,
     fixedCells,
@@ -955,6 +1109,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     mistakes,
     notes,
     persistRaceState,
+    refetch,
     room,
     updateSharedBoard,
   ])
@@ -1061,31 +1216,79 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
   }, [isEnabled, normalizedRoomCode, refetch])
 
   useEffect(() => {
-    if (!supabase || !normalizedRoomCode || !isEnabled) {
+    roomRef.current = room
+  }, [room])
+
+  useEffect(() => {
+    if (!supabase || !room?.id || !isEnabled) {
       return undefined
     }
 
     const client = supabase
     const roomChannel = client
-      .channel(`online-room:${normalizedRoomCode}`)
+      .channel(`online-room-${room.id}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'online_rooms',
-          filter: `room_code=eq.${normalizedRoomCode}`,
+          filter: `id=eq.${room.id}`,
         },
-        () => {
-          void refetch()
+        (payload) => {
+          if (import.meta.env.DEV) {
+            console.log('Realtime room update received:', payload)
+          }
+
+          if (payload.eventType === 'DELETE') {
+            void refetch()
+            return
+          }
+
+          const currentRoom = roomRef.current
+
+          if (!currentRoom) {
+            void refetch()
+            return
+          }
+
+          const nextRoom = mergeRealtimeRoom(
+            currentRoom,
+            (payload.new ?? {}) as Partial<OnlineRoomRow>,
+          )
+
+          if (!nextRoom) {
+            void refetch()
+            return
+          }
+
+          roomRef.current = nextRoom
+          setRoom(nextRoom)
+          setSyncStatus('connected')
+          setError((current) => (current === SHARED_BOARD_SYNC_ERROR_MESSAGE ? null : current))
+
+          if (nextRoom.mode === 'collaborative') {
+            syncedBoardKeyRef.current = JSON.stringify(nextRoom.sharedBoard)
+            setLocalBoard(cloneBoard(nextRoom.sharedBoard))
+          }
         },
       )
-      .subscribe()
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setSyncStatus('connected')
+          return
+        }
+
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          setSyncStatus('error')
+          setError(SHARED_BOARD_SYNC_ERROR_MESSAGE)
+        }
+      })
 
     return () => {
       void client.removeChannel(roomChannel)
     }
-  }, [isEnabled, normalizedRoomCode, refetch])
+  }, [isEnabled, refetch, room?.id])
 
   useEffect(() => {
     if (!supabase || !room?.id || !isEnabled) {
@@ -1147,6 +1350,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
   // Including board/player stat objects here would clear notes and selection on every realtime update.
   useEffect(() => {
     if (!room) {
+      roomRef.current = null
       setLocalBoard(cloneBoard(EMPTY_BOARD))
       setNotes(createEmptyNotesBoard())
       setSelectedCell(null)
@@ -1266,6 +1470,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     actionLoading,
     membershipLoading,
     error,
+    syncStatus,
     canEdit,
     board: localBoard,
     solution,

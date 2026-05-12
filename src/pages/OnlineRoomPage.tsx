@@ -57,6 +57,7 @@ export function OnlineRoomPage() {
     loading,
     membershipLoading,
     error,
+    syncStatus,
     canEdit,
     board,
     solution,
@@ -182,6 +183,16 @@ export function OnlineRoomPage() {
   const difficultyMeta = difficultyConfig[room.difficulty]
   const editingLocked = !canEdit
   const numberPadCompleted = editingLocked || completed
+  const syncBadgeClasses = syncStatus === 'error'
+    ? 'border-rose-200 bg-rose-100/85 text-rose-950 dark:border-rose-300/20 dark:bg-rose-400/10 dark:text-rose-100'
+    : syncStatus === 'syncing'
+      ? 'border-amber-200 bg-amber-100/85 text-amber-950 dark:border-amber-300/20 dark:bg-amber-400/10 dark:text-amber-100'
+      : 'border-emerald-200 bg-emerald-100/85 text-emerald-950 dark:border-emerald-300/20 dark:bg-emerald-400/10 dark:text-emerald-100'
+  const syncLabel = syncStatus === 'error'
+    ? 'Sync error'
+    : syncStatus === 'syncing'
+      ? 'Syncing...'
+      : 'Live sync connected'
 
   return (
     <div className="space-y-3 lg:space-y-4">
@@ -252,6 +263,9 @@ export function OnlineRoomPage() {
           </span>
           <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 dark:border-white/10 dark:bg-white/8 dark:text-slate-200">
             {players.length} players
+          </span>
+          <span className={cn('rounded-full border px-3 py-1 text-xs font-medium', syncBadgeClasses)}>
+            {syncLabel}
           </span>
           {winnerPlayer ? (
             <span className="rounded-full border border-amber-200 bg-amber-100/85 px-3 py-1 text-xs font-medium text-amber-950 dark:border-amber-300/20 dark:bg-amber-400/10 dark:text-amber-100">
