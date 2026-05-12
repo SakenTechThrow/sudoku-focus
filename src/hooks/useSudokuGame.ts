@@ -144,7 +144,8 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
         : 'playing'),
   )
   const [notesMode, setNotesMode] = useState(restoredState?.notesMode ?? false)
-  const [isPaused, setIsPaused] = useState(false)
+  const [hasStarted, setHasStarted] = useState(restoredState?.hasStarted ?? false)
+  const [isPaused, setIsPaused] = useState(restoredState?.isPaused ?? false)
   const [sessionId, setSessionId] = useState(1)
   const [checkResult, setCheckResult] = useState<CheckResult | null>(null)
   const [lastMove, setLastMove] = useState<LastMove | null>(null)
@@ -153,10 +154,14 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
   )
   const timer = useTimer({
     initialSeconds: restoredState?.seconds ?? 0,
-    autoStart: (
-      restoredState?.status
-      ?? (restoredState?.completed ? 'won' : 'playing')
-    ) === 'playing',
+    autoStart: Boolean(
+      restoredState?.hasStarted
+      && !restoredState?.isPaused
+      && (
+        restoredState?.status
+        ?? (restoredState?.completed ? 'won' : 'playing')
+      ) === 'playing',
+    ),
   })
   const fixedCells = useMemo(() => createFixedCells(puzzle), [puzzle])
   const currentDifficultyConfig = difficultyConfig[difficulty]
@@ -185,6 +190,26 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
     setCheckResult(null)
   }
 
+  function startGame() {
+    if (isGameOver || hasStarted) {
+      return
+    }
+
+    setHasStarted(true)
+    setIsPaused(false)
+    timer.start()
+  }
+
+  function ensureGameStarted() {
+    if (isGameOver || hasStarted) {
+      return
+    }
+
+    setHasStarted(true)
+    setIsPaused(false)
+    timer.start()
+  }
+
   function applyFreshGame(nextGame: GeneratedPuzzle) {
     const nextPuzzle = cloneBoard(nextGame.puzzle)
     const nextSolution = cloneBoard(nextGame.solution)
@@ -202,12 +227,13 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
     setHintsUsed(0)
     setStatus('playing')
     setNotesMode(false)
+    setHasStarted(false)
     setIsPaused(false)
     setSessionId((current) => current + 1)
     clearCheckResult()
     setLastMove(null)
     setInvalidCellKeys(getInvalidPositions(nextPuzzle, nextSolution, nextFixedCells))
-    timer.start()
+    timer.reset()
   }
 
   function setCellValue(value: CandidateValue) {
@@ -226,6 +252,8 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
         return
       }
 
+      ensureGameStarted()
+
       const nextNotes = cloneNotesBoard(notes)
       const hasNote = nextNotes[row][col].includes(value)
 
@@ -241,6 +269,8 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
     if (board[row][col] === value) {
       return
     }
+
+    ensureGameStarted()
 
     const nextBoard = cloneBoard(board)
     const nextNotes = cloneNotesBoard(notes)
@@ -263,6 +293,7 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
 
     if (nextCompleted) {
       setStatus('won')
+      setIsPaused(false)
       setCheckResult({
         status: 'solved',
         message: 'Puzzle solved. Great work.',
@@ -273,6 +304,7 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
 
     if (nextMistakes >= MAX_MISTAKES) {
       setStatus('lost')
+      setIsPaused(false)
       setCheckResult({
         status: 'incorrect',
         message: 'Game over. You used all 3 mistakes.',
@@ -320,6 +352,8 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
       return false
     }
 
+    ensureGameStarted()
+
     for (let row = 0; row < 9; row += 1) {
       for (let col = 0; col < 9; col += 1) {
         if (fixedCells[row][col] || board[row][col] !== 0) {
@@ -347,6 +381,7 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
           : null)
 
         if (nextCompleted) {
+          setIsPaused(false)
           timer.pause()
         }
 
@@ -409,13 +444,14 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
     }
 
     setStatus('won')
+    setIsPaused(false)
     setCheckResult(result)
     timer.pause()
     return result
   }
 
   function pauseGame() {
-    if (isGameOver) {
+    if (isGameOver || !hasStarted) {
       return
     }
 
@@ -424,7 +460,7 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
   }
 
   function resumeGame() {
-    if (isGameOver) {
+    if (isGameOver || !hasStarted) {
       return
     }
 
@@ -433,6 +469,10 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
   }
 
   function togglePause() {
+    if (!hasStarted || isGameOver) {
+      return
+    }
+
     if (isPaused) {
       resumeGame()
       return
@@ -457,12 +497,13 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
     setHintsUsed(0)
     setStatus('playing')
     setNotesMode(false)
+    setHasStarted(false)
     setIsPaused(false)
     setSessionId((current) => current + 1)
     clearCheckResult()
     setLastMove(null)
     setInvalidCellKeys(getInvalidPositions(nextPuzzle, solution, nextFixedCells))
-    timer.start()
+    timer.reset()
   }
 
   function clearSavedProgress() {
@@ -535,6 +576,8 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
       completed,
       status,
       notesMode,
+      hasStarted,
+      isPaused,
     }
 
     saveGameState(gameState)
@@ -550,6 +593,8 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
     completed,
     status,
     notesMode,
+    hasStarted,
+    isPaused,
     saveGameState,
   ])
 
@@ -587,6 +632,7 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
     checkResult,
     lastMove,
     notesMode,
+    hasStarted,
     isPaused,
     invalidCellKeys,
     isComplete,
@@ -603,6 +649,7 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
     pauseGame,
     resumeGame,
     togglePause,
+    startGame,
     startNewGame,
     resetGame,
     clearSavedProgress,

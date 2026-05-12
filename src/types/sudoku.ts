@@ -56,4 +56,6 @@ export type PersistedSudokuGameState = {
   completed: boolean
   status: GameStatus
   notesMode: boolean
+  hasStarted: boolean
+  isPaused: boolean
 }

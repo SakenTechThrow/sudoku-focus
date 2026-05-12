@@ -82,6 +82,7 @@ export function OnlineRoomPage() {
     mistakeLimit,
     hintsUsed,
     lastMove,
+    hasStarted,
     status,
     isGameOver,
     checkResult,
@@ -95,6 +96,7 @@ export function OnlineRoomPage() {
     toggleNotesMode,
     revealHint,
     checkSolution,
+    startGame,
     resetBoard,
   } = useOnlineRoom(roomCode, { enabled: !authLoading && isAuthenticated })
   const coach = useAICoach({
@@ -230,6 +232,7 @@ export function OnlineRoomPage() {
         mistakes={mistakes}
         hintsUsed={hintsUsed}
         notesMode={notesMode}
+        hasStarted={hasStarted}
         isPaused={false}
         status={status}
         eyebrow="Online"
@@ -341,8 +344,12 @@ export function OnlineRoomPage() {
                 </p>
                 <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-300">
                   {room.mode === 'collaborative'
-                    ? 'Every move updates the same room board for everyone.'
-                    : 'Everyone solves the same puzzle separately. Your moves do not change other players\' boards.'}
+                    ? hasStarted
+                      ? 'Every move updates the same room board for everyone.'
+                      : 'Press Start or make your first move when you are ready to help solve the room.'
+                    : hasStarted
+                      ? 'Everyone solves the same puzzle separately. Your moves do not change other players\' boards.'
+                      : 'Press Start or make your first move when you are ready to begin the race.'}
                 </p>
               </div>
               <button
@@ -373,6 +380,26 @@ export function OnlineRoomPage() {
         </div>
 
         <div className="space-y-4 lg:sticky lg:top-24">
+          {!hasStarted && !isGameOver && currentPlayer ? (
+            <section className="rounded-[1.8rem] border border-cyan-200/90 bg-cyan-100/80 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-cyan-300/20 dark:bg-cyan-400/10 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5">
+              <p className="text-xs uppercase tracking-[0.28em] text-cyan-800 dark:text-cyan-100/80">
+                Ready to start?
+              </p>
+              <p className="mt-2 text-sm leading-6 text-cyan-950 dark:text-cyan-50">
+                {room.mode === 'collaborative'
+                  ? 'Choose a cell or press Start Playing when you want your local timer to begin.'
+                  : 'Choose a cell or press Start Playing when you want your race timer to begin.'}
+              </p>
+              <button
+                type="button"
+                onClick={startGame}
+                className="mt-4 w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-[color:#f8fbff] transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-50"
+              >
+                Start Playing
+              </button>
+            </section>
+          ) : null}
+
           <NumberPad
             selectedCell={selectedCell}
             selectedValue={selectedValue}

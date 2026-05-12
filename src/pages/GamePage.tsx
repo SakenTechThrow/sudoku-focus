@@ -36,6 +36,7 @@ export function GamePage() {
     status,
     isGameOver,
     lastMove,
+    hasStarted,
     checkResult,
     notesMode,
     isPaused,
@@ -51,6 +52,7 @@ export function GamePage() {
     revealHint,
     checkSolution,
     togglePause,
+    startGame,
     resetGame,
     clearSavedProgress,
   } = useSudokuGame()
@@ -141,6 +143,7 @@ export function GamePage() {
           mistakes={mistakes}
           hintsUsed={hintsUsed}
           notesMode={notesMode}
+          hasStarted={hasStarted}
           isPaused={isPaused}
           status={status}
         />
@@ -151,7 +154,7 @@ export function GamePage() {
               <div>
                 <p className="text-xs uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-200/75">Sudoku Board</p>
                 <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                  Select any cell to begin. Fixed clues stay locked.
+                  Choose a cell, then press Start or enter your first move. Fixed clues stay locked.
                 </p>
               </div>
               <button
@@ -189,6 +192,7 @@ export function GamePage() {
               isSelectedCellFixed={isSelectedCellFixed}
               status={status}
               isGameOver={isGameOver}
+              hasStarted={hasStarted}
               isPaused={isPaused}
               isComplete={isComplete}
               checkResult={checkResult}
@@ -201,10 +205,12 @@ export function GamePage() {
               onToggleNotesMode={toggleNotesMode}
               onRevealHint={rewardedHint.requestHint}
               onCheckSolution={checkSolution}
+              onStartGame={startGame}
               onStartNewGame={() => startNewGame(difficulty)}
               onResetGame={resetGame}
               onTogglePause={togglePause}
               onClearSavedProgress={clearSavedProgress}
+              startActionLabel="Start Game"
             />
 
             <AICoachPanel

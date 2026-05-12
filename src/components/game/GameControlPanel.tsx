@@ -29,6 +29,7 @@ type GameControlPanelProps = {
   isSelectedCellFixed: boolean
   status: GameStatus
   isGameOver: boolean
+  hasStarted: boolean
   isPaused: boolean
   isComplete: boolean
   checkResult: CheckResult | null
@@ -41,6 +42,7 @@ type GameControlPanelProps = {
   onToggleNotesMode: () => void
   onRevealHint: () => void
   onCheckSolution: () => CheckResult
+  onStartGame: () => void
   onStartNewGame: () => void
   onResetGame: () => void
   onTogglePause: () => void
@@ -50,6 +52,7 @@ type GameControlPanelProps = {
   showClearSavedProgress?: boolean
   startNewGameLabel?: string
   clearSavedProgressLabel?: string
+  startActionLabel?: string
 }
 
 export function GameControlPanel({
@@ -60,6 +63,7 @@ export function GameControlPanel({
   isSelectedCellFixed,
   status,
   isGameOver,
+  hasStarted,
   isPaused,
   isComplete,
   checkResult,
@@ -72,6 +76,7 @@ export function GameControlPanel({
   onToggleNotesMode,
   onRevealHint,
   onCheckSolution,
+  onStartGame,
   onStartNewGame,
   onResetGame,
   onTogglePause,
@@ -81,12 +86,15 @@ export function GameControlPanel({
   showClearSavedProgress = true,
   startNewGameLabel = 'New Game',
   clearSavedProgressLabel = 'Clear Saved Game',
+  startActionLabel = 'Start Game',
 }: GameControlPanelProps) {
   const canInteract = !isGameOver && !isPaused
   const sessionStatusCopy = status === 'lost'
     ? 'Game over. Start a new puzzle or reset this board to keep earning points.'
     : status === 'won'
       ? 'Puzzle solved. Save the win or launch a fresh session when you are ready.'
+      : !hasStarted
+        ? 'Ready to begin. Press Start, enter a value, place a note, or use a hint to start the timer.'
       : isPaused
         ? 'The board is paused and protected from input.'
         : isComplete
@@ -120,16 +128,27 @@ export function GameControlPanel({
             </button>
           ) : null}
 
+          {!hasStarted && !isGameOver ? (
             <button
               type="button"
-              onClick={onTogglePause}
-              disabled={isGameOver}
-              className={cn(
-                'flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition',
-                isGameOver
-                  ? 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400 dark:border-white/8 dark:bg-slate-950/40 dark:text-slate-500'
-                  : 'bg-slate-950 text-[color:#f8fbff] hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-50',
-              )}
+              onClick={onStartGame}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-[color:#f8fbff] transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-50 sm:col-span-2"
+            >
+              <Play className="h-4 w-4" />
+              {startActionLabel}
+            </button>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={onTogglePause}
+            disabled={isGameOver || !hasStarted}
+            className={cn(
+              'flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition',
+              isGameOver || !hasStarted
+                ? 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400 dark:border-white/8 dark:bg-slate-950/40 dark:text-slate-500'
+                : 'bg-slate-950 text-[color:#f8fbff] hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-50',
+            )}
           >
             {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
             {isPaused ? 'Resume' : 'Pause'}

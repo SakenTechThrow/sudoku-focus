@@ -11,6 +11,7 @@ type GameSessionHeaderProps = {
   mistakes: number
   hintsUsed: number
   notesMode: boolean
+  hasStarted: boolean
   isPaused: boolean
   status?: GameStatus
   eyebrow?: string
@@ -28,6 +29,7 @@ export function GameSessionHeader({
   mistakes,
   hintsUsed,
   notesMode,
+  hasStarted,
   isPaused,
   status = 'playing',
   eyebrow = 'Play',
@@ -44,6 +46,8 @@ export function GameSessionHeader({
     ? 'Stopped after your winning solve'
     : status === 'lost'
       ? 'Stopped after game over'
+      : !hasStarted
+        ? 'Ready when you are'
       : isPaused
         ? 'Paused and ready to resume'
         : 'Running focus timer'
@@ -105,7 +109,12 @@ export function GameSessionHeader({
               <span className="text-xs uppercase tracking-[0.24em]">Timer</span>
             </div>
             <p className="mt-2 font-display text-[1.7rem] font-semibold text-slate-950 dark:text-white">{formattedTime}</p>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{timerSummary}</p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              {timerSummary}
+              {!hasStarted && status === 'playing'
+                ? ' Press Start or make your first move.'
+                : ''}
+            </p>
           </div>
 
           <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50/90 p-3 dark:border-white/10 dark:bg-slate-950/45">

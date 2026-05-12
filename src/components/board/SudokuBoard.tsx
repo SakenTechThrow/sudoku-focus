@@ -43,8 +43,8 @@ export function SudokuBoard({
     <div className="relative w-full max-w-[32.5rem]">
       <div
         className={cn(
-          'grid aspect-square grid-cols-9 overflow-hidden rounded-[1.35rem] border-2 border-white/14 bg-slate-950/85 shadow-[0_24px_80px_rgba(2,8,24,0.45)] transition',
-          celebrate && 'sudoku-board-celebrate border-emerald-300/35 shadow-[0_24px_90px_rgba(16,185,129,0.26)] dark:border-emerald-300/28',
+          'grid aspect-square grid-cols-9 overflow-hidden rounded-[1.35rem] border-2 border-slate-400/90 bg-slate-100/95 shadow-[0_24px_80px_rgba(148,163,184,0.28)] transition dark:border-white/14 dark:bg-slate-950/85 dark:shadow-[0_24px_80px_rgba(2,8,24,0.45)]',
+          celebrate && 'sudoku-board-celebrate border-emerald-400/55 shadow-[0_24px_90px_rgba(16,185,129,0.2)] dark:border-emerald-300/28 dark:shadow-[0_24px_90px_rgba(16,185,129,0.26)]',
         )}
       >
         {board.flatMap((row, rowIndex) =>
@@ -94,11 +94,11 @@ export function SudokuBoard({
               <div
                 key={positionKey(rowIndex, columnIndex)}
                 className={cn(
-                  'border-white/8',
+                  'border-slate-200 dark:border-white/8',
                   rowIndex === 0 ? 'border-t-0' : 'border-t',
                   columnIndex === 0 ? 'border-l-0' : 'border-l',
-                  rowIndex % 3 === 0 && rowIndex !== 0 && 'border-t-2 border-t-white/18',
-                  columnIndex % 3 === 0 && columnIndex !== 0 && 'border-l-2 border-l-white/18',
+                  rowIndex % 3 === 0 && rowIndex !== 0 && 'border-t-2 border-t-slate-400 dark:border-t-white/18',
+                  columnIndex % 3 === 0 && columnIndex !== 0 && 'border-l-2 border-l-slate-400 dark:border-l-white/18',
                 )}
               >
                 <SudokuCell
@@ -122,11 +122,11 @@ export function SudokuBoard({
       </div>
 
       {isPaused ? (
-        <div className="absolute inset-0 flex items-center justify-center rounded-[1.35rem] bg-slate-950/78 backdrop-blur-sm">
-          <div className="rounded-[1.4rem] border border-white/10 bg-white/8 px-5 py-4 text-center shadow-[0_18px_60px_rgba(2,8,24,0.35)]">
-            <p className="text-xs uppercase tracking-[0.28em] text-cyan-200/75">Game paused</p>
-            <p className="mt-3 font-display text-2xl font-semibold text-white sm:text-3xl">Take a breath</p>
-            <p className="mt-2 text-sm text-slate-300">Resume when you&apos;re ready to focus again.</p>
+        <div className="absolute inset-0 flex items-center justify-center rounded-[1.35rem] bg-white/72 backdrop-blur-sm dark:bg-slate-950/78">
+          <div className="rounded-[1.4rem] border border-slate-200 bg-white/90 px-5 py-4 text-center shadow-[0_18px_60px_rgba(148,163,184,0.26)] dark:border-white/10 dark:bg-white/8 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)]">
+            <p className="text-xs uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-200/75">Game paused</p>
+            <p className="mt-3 font-display text-2xl font-semibold text-slate-950 dark:text-white sm:text-3xl">Take a breath</p>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Resume when you&apos;re ready to focus again.</p>
           </div>
         </div>
       ) : null}

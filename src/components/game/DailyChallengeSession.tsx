@@ -67,6 +67,7 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
     status,
     isGameOver,
     lastMove,
+    hasStarted,
     checkResult,
     notesMode,
     isPaused,
@@ -81,6 +82,7 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
     revealHint,
     checkSolution,
     togglePause,
+    startGame,
     resetGame,
   } = game
   const { isAuthenticated } = useAuth()
@@ -172,6 +174,7 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
         mistakes={mistakes}
         hintsUsed={hintsUsed}
         notesMode={notesMode}
+        hasStarted={hasStarted}
         isPaused={isPaused}
         status={status}
         eyebrow="Daily"
@@ -185,7 +188,7 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
             <div>
               <p className="text-xs uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-200/75">Daily Board</p>
               <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                Everyone sees the same puzzle today. Solve cleanly to climb the daily rankings.
+                Everyone sees the same puzzle today. Press Start or make your first move when you're ready.
               </p>
             </div>
             <button
@@ -223,6 +226,7 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
             isSelectedCellFixed={isSelectedCellFixed}
             status={status}
             isGameOver={isGameOver}
+            hasStarted={hasStarted}
             isPaused={isPaused}
             isComplete={isComplete}
             checkResult={checkResult}
@@ -235,6 +239,7 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
             onToggleNotesMode={toggleNotesMode}
             onRevealHint={rewardedHint.requestHint}
             onCheckSolution={checkSolution}
+            onStartGame={startGame}
             onStartNewGame={() => {}}
             onResetGame={resetGame}
             onTogglePause={togglePause}
@@ -242,6 +247,7 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
             showDifficultySelector={false}
             showStartNewGame={false}
             showClearSavedProgress={false}
+            startActionLabel="Start Daily Challenge"
           />
 
           <AICoachPanel

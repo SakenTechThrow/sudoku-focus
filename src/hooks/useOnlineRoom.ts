@@ -83,6 +83,18 @@ function cloneBoard(board: SudokuBoard): SudokuBoard {
   return board.map((row) => [...row]) as SudokuBoard
 }
 
+function boardDiffers(left: SudokuBoard, right: SudokuBoard) {
+  for (let row = 0; row < 9; row += 1) {
+    for (let col = 0; col < 9; col += 1) {
+      if (left[row][col] !== right[row][col]) {
+        return true
+      }
+    }
+  }
+
+  return false
+}
+
 function cloneNotesBoard(notes: NotesBoard): NotesBoard {
   return notes.map((row) => row.map((cell) => [...cell])) as NotesBoard
 }
@@ -416,6 +428,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
   const [gameStatus, setGameStatus] = useState<GameStatus>('playing')
   const [completed, setCompleted] = useState(false)
   const [checkResult, setCheckResult] = useState<CheckResult | null>(null)
+  const [hasStarted, setHasStarted] = useState(false)
   const [seconds, setSeconds] = useState(0)
   const [isTimerRunning, setIsTimerRunning] = useState(false)
   const joinedMembershipKeyRef = useRef<string | null>(null)
@@ -970,6 +983,38 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     setCheckResult(null)
   }
 
+  const startGame = useCallback(() => {
+    if (
+      !room
+      || !isAuthenticated
+      || !currentPlayer
+      || room.status !== 'active'
+      || hasStarted
+      || isGameOver
+    ) {
+      return
+    }
+
+    setHasStarted(true)
+    setIsTimerRunning(true)
+  }, [currentPlayer, hasStarted, isAuthenticated, isGameOver, room])
+
+  const ensureGameStarted = useCallback(() => {
+    if (
+      !room
+      || !isAuthenticated
+      || !currentPlayer
+      || room.status !== 'active'
+      || hasStarted
+      || isGameOver
+    ) {
+      return
+    }
+
+    setHasStarted(true)
+    setIsTimerRunning(true)
+  }, [currentPlayer, hasStarted, isAuthenticated, isGameOver, room])
+
   function selectCell(row: number, col: number) {
     if (!canEdit) {
       return
@@ -1007,6 +1052,8 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
         return
       }
 
+      ensureGameStarted()
+
       const nextNotes = cloneNotesBoard(notes)
       const hasNote = nextNotes[row][col].includes(value)
 
@@ -1022,6 +1069,8 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     if (localBoard[row][col] === value) {
       return
     }
+
+    ensureGameStarted()
 
     const nextBoard = cloneBoard(localBoard)
     const nextNotes = cloneNotesBoard(notes)
@@ -1097,6 +1146,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
   }, [
     applyCollaborativeBoardLocally,
     canEdit,
+    ensureGameStarted,
     failRace,
     finishRace,
     fixedCells,
@@ -1172,6 +1222,8 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
       return false
     }
 
+    ensureGameStarted()
+
     for (let row = 0; row < 9; row += 1) {
       for (let col = 0; col < 9; col += 1) {
         if (fixedCells[row][col] || localBoard[row][col] !== 0) {
@@ -1241,6 +1293,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
   }, [
     applyCollaborativeBoardLocally,
     canEdit,
+    ensureGameStarted,
     finishRace,
     fixedCells,
     hintsUsed,
@@ -1355,8 +1408,9 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     setGameStatus('playing')
     setCompleted(false)
     setCheckResult(null)
+    setHasStarted(false)
     setSeconds(0)
-    setIsTimerRunning(true)
+    setIsTimerRunning(false)
 
     try {
       await updateCurrentPlayer({
@@ -1549,6 +1603,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
       setGameStatus('playing')
       setCompleted(false)
       setCheckResult(null)
+      setHasStarted(false)
       setSeconds(0)
       setIsTimerRunning(false)
       return
@@ -1561,10 +1616,21 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     setCheckResult(null)
 
     if (room.mode === 'race') {
+      const playerBoard = currentPlayer?.personalBoard ?? room.puzzle
+      const raceHasStarted = Boolean(
+        currentPlayer?.completed
+        || (currentPlayer && isRacePlayerFailed(currentPlayer))
+        || (currentPlayer?.timeSeconds ?? 0) > 0
+        || (currentPlayer?.mistakes ?? 0) > 0
+        || (currentPlayer?.hintsUsed ?? 0) > 0
+        || boardDiffers(playerBoard, room.puzzle)
+      )
+
       setMistakes(currentPlayer?.mistakes ?? 0)
       setHintsUsed(currentPlayer?.hintsUsed ?? 0)
       setCompleted(currentPlayer?.completed ?? false)
       setSeconds(currentPlayer?.timeSeconds ?? 0)
+      setHasStarted(raceHasStarted)
       setGameStatus(
         currentPlayer?.completed
           ? 'won'
@@ -1579,6 +1645,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     setMistakes(0)
     setHintsUsed(0)
     setCompleted(roomSolved)
+    setHasStarted(false)
     setGameStatus(roomSolved ? 'won' : 'playing')
     setSeconds(0)
   }, [currentPlayer?.id, room?.id, room?.mode]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -1634,11 +1701,12 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
       && room.status === 'active'
       && isAuthenticated
       && currentPlayer
+      && hasStarted
       && !isGameOver,
     )
 
     setIsTimerRunning(shouldRun)
-  }, [currentPlayer, isAuthenticated, isGameOver, room])
+  }, [currentPlayer, hasStarted, isAuthenticated, isGameOver, room])
 
   useEffect(() => {
     if (!isTimerRunning) {
@@ -1707,6 +1775,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     mistakeLimit,
     hintsUsed,
     lastMove,
+    hasStarted,
     status: gameStatus,
     isGameOver,
     completed,
@@ -1725,6 +1794,7 @@ export function useOnlineRoom(roomCode?: string, options?: UseOnlineRoomOptions)
     toggleNotesMode,
     revealHint,
     checkSolution,
+    startGame,
     resetBoard,
   }
 }
