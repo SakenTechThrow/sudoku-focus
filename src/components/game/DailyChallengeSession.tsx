@@ -181,7 +181,7 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
         status={status}
         eyebrow="Daily"
         title="Shared challenge session"
-        description={`One shared puzzle every day. Today’s board for ${formatChallengeDate(challenge.challengeDate)} is locked to a single medium challenge for everyone.`}
+        description={`One puzzle. One day. ${formatChallengeDate(challenge.challengeDate)}.`}
       />
 
       {showReadyScreen ? (
@@ -189,16 +189,16 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
           <PreGameReadyCard
             eyebrow="Daily challenge"
             title="Ready for today's challenge?"
-            description="One shared puzzle for today. Start when you are ready."
+            description="One puzzle. One day. One shot."
             actionLabel="Start Daily Challenge"
             onStart={startGame}
             stats={[
               { label: 'Date', value: formatChallengeDate(challenge.challengeDate) },
               { label: 'Difficulty', value: difficultyConfig.label },
-              { label: 'Mistake limit', value: `${mistakeLimit}` },
+              { label: 'Mistakes', value: `${mistakeLimit}` },
               { label: 'Leaderboard', value: 'Daily standings' },
             ]}
-            footnote="Daily results count only after a winning finish, and the leaderboard updates below."
+            footnote="Win to submit your result."
           />
 
           <div className="rounded-[1.8rem] border border-slate-200/90 bg-white/82 p-4 text-sm leading-6 text-slate-600 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:text-slate-300 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5 lg:sticky lg:top-24">
@@ -212,8 +212,8 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
               <div>
                 <p className="text-xs uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-200/75">Daily Board</p>
                 <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                  Everyone sees the same puzzle today. Solve cleanly to climb the daily rankings.
-                </p>
+                One shared board. Climb the daily standings.
+              </p>
               </div>
               <button
                 type="button"

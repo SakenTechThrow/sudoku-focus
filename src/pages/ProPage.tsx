@@ -33,7 +33,7 @@ const plans: PricingPlan[] = [
     price: '$0',
     cadence: 'Always available',
     accent: 'border-slate-200 bg-white/82 dark:border-white/10 dark:bg-white/6',
-    description: 'A solid daily brain-training routine with the core game loop unlocked.',
+    description: 'Core play for everyday training.',
     features: [
       '3 free hints per puzzle',
       'Basic AI Coach',
@@ -47,7 +47,7 @@ const plans: PricingPlan[] = [
     cadence: 'Coming soon',
     featured: true,
     accent: 'border-cyan-300/35 bg-gradient-to-br from-cyan-100/88 via-white/86 to-amber-100/70 dark:border-cyan-300/20 dark:from-cyan-400/14 dark:via-white/6 dark:to-amber-300/10',
-    description: 'Built for serious solvers who want fewer limits, richer insight, and a more premium ritual.',
+    description: 'More depth, fewer limits, better rewards.',
     features: [
       'Unlimited hints',
       'No rewarded ads',
@@ -64,7 +64,7 @@ const plans: PricingPlan[] = [
     price: 'Pilot access',
     cadence: 'For teachers and coaches',
     accent: 'border-fuchsia-200/70 bg-white/82 dark:border-fuchsia-300/20 dark:bg-white/6',
-    description: 'A future expansion for learning groups, classrooms, and guided training programs.',
+    description: 'A future layer for teachers and teams.',
     features: [
       'Create rooms for students',
       'Track student progress',
@@ -79,22 +79,22 @@ const faqs = [
   {
     question: 'Is payment enabled?',
     answer:
-      'No. This page is a prototype monetization experiment, so there is no real billing or checkout yet.',
+      'No. Billing is not live yet.',
   },
   {
     question: 'What is rewarded hint unlock?',
     answer:
-      'Free users can use the first three hints in a puzzle normally. After that, hints can be unlocked through the current sponsored flow.',
+      'Three hints are free. More hints use the sponsored unlock flow.',
   },
   {
     question: 'Can I play for free?',
     answer:
-      'Yes. The main game, Daily Challenge, and core AI Coach experience are still available in the free tier.',
+      'Yes. Core play, Daily Challenge, and AI Coach stay free.',
   },
   {
     question: 'Will there be classroom mode?',
     answer:
-      'That is the direction. The Classroom / Team plan is meant to show how Sudoku Focus could support teachers, coaches, and guided group learning.',
+      'Yes. Classroom mode is part of the product direction.',
   },
 ] as const
 
@@ -159,10 +159,10 @@ export function ProPage() {
               Focus Pro
             </h1>
             <p className="mt-4 max-w-3xl text-xl font-medium text-slate-700 dark:text-slate-100">
-              A realistic pricing preview for how Sudoku Focus can grow beyond a class project.
+              A realistic pricing preview.
             </p>
-            <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600 dark:text-slate-300 sm:text-lg">
-              The product stays generous for free players, while Pro and Classroom plans create a believable path toward premium coaching, better retention, and team-based learning.
+            <p className="mt-5 max-w-3xl text-base leading-7 text-slate-600 dark:text-slate-300 sm:text-lg">
+              Free stays generous. Pro adds depth. Classroom opens a team path.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -194,7 +194,7 @@ export function ProPage() {
                   <span className="text-sm font-semibold">Upgrade on value, not pressure</span>
                 </div>
                 <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                  Paid features deepen the learning and personalization loop instead of restricting the base game.
+                  Upgrade on value, not pressure.
                 </p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/6">
@@ -203,7 +203,7 @@ export function ProPage() {
                   <span className="text-sm font-semibold">Consumer + classroom expansion</span>
                 </div>
                 <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                  The pricing story supports both solo subscriptions and a future B2B education layer.
+                  Consumer plus classroom upside.
                 </p>
               </div>
             </div>
@@ -219,8 +219,8 @@ export function ProPage() {
               Plans that match different learning habits
             </h2>
           </div>
-          <p className="max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
-            The structure below is intentionally realistic enough to communicate product strategy, but still honest about being pre-launch.
+          <p className="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+            Prototype pricing with a real product angle.
           </p>
         </div>
 

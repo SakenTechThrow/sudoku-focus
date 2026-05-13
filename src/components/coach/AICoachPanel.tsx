@@ -181,16 +181,16 @@ export function AICoachPanel({
                 {confidence}
               </span>
             </div>
-            <p className="mt-3 text-sm leading-7">{message}</p>
+            <p className="mt-3 text-sm leading-6">{message}</p>
           </div>
 
           <div className="mt-4 rounded-[1.3rem] border border-slate-200 bg-slate-50/90 px-4 py-3 dark:border-white/10 dark:bg-slate-950/45">
-            <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Suggested next step</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Next step</p>
             <p className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-200">{suggestedNextStep}</p>
           </div>
 
-          <div className="mt-4 flex items-center justify-end gap-3">
-            <p className="text-xs text-slate-500 dark:text-slate-400">Press C to focus the coach</p>
+          <div className="mt-3 flex items-center justify-end gap-3">
+            <p className="text-xs text-slate-500 dark:text-slate-400">Press C to focus</p>
           </div>
 
           {possibleValues.length > 0 ? (
@@ -211,14 +211,14 @@ export function AICoachPanel({
 
           {isTeachingExpanded ? (
             <div className="mt-4 rounded-[1.3rem] border border-slate-200 bg-white/92 px-4 py-4 dark:border-white/10 dark:bg-slate-950/55">
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Why this strategy works</p>
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Deep explanation</p>
               <p className="mt-3 text-sm leading-7 text-slate-700 dark:text-slate-200">{deeperExplanation}</p>
             </div>
           ) : null}
         </>
       ) : (
         <div className="mt-3 rounded-[1.3rem] border border-slate-200 bg-slate-50/90 px-4 py-3 text-sm text-slate-600 dark:border-white/10 dark:bg-slate-950/45 dark:text-slate-300">
-          Open the coach when you want a quick strategy tip or a deeper explanation for the selected cell.
+          Open for a quick tip or a deeper breakdown.
         </div>
       )}
     </section>

@@ -90,16 +90,16 @@ export function GameControlPanel({
 }: GameControlPanelProps) {
   const canInteract = !isGameOver && !isPaused
   const sessionStatusCopy = status === 'lost'
-    ? 'Game over. Start a new puzzle or reset this board to keep earning points.'
+    ? 'Game over. Reset or start fresh.'
     : status === 'won'
-      ? 'Puzzle solved. Save the win or launch a fresh session when you are ready.'
+      ? 'Solved. Save it or go again.'
       : !hasStarted
-        ? 'Ready to begin. Press Start, enter a value, place a note, or use a hint to start the timer.'
+        ? 'Ready to start.'
       : isPaused
-        ? 'The board is paused and protected from input.'
+        ? 'Paused.'
         : isComplete
-          ? 'Every cell is filled. Check the solution or keep reviewing flagged cells.'
-          : 'Numbers, notes, hints, and keyboard shortcuts are all live on this board.'
+          ? 'Board filled. Check it.'
+          : 'Board live. Shortcuts live.'
 
   return (
     <div className="space-y-4">
@@ -193,7 +193,7 @@ export function GameControlPanel({
         <div className="mt-4 flex items-start gap-3 rounded-[1.4rem] border border-slate-200 bg-slate-50/90 px-4 py-3 dark:border-white/10 dark:bg-slate-950/45">
           <TriangleAlert className="mt-0.5 h-5 w-5 text-amber-700 dark:text-amber-200" />
           <div>
-            <p className="text-sm font-semibold text-slate-950 dark:text-white">Session status</p>
+            <p className="text-sm font-semibold text-slate-950 dark:text-white">Status</p>
             <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{sessionStatusCopy}</p>
           </div>
         </div>

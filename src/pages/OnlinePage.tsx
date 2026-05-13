@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowRight, Globe2, TimerReset, Users2 } from 'lucide-react'
+import { ArrowRight, Globe2, Link2, TimerReset, Users2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { CommunityCard } from '../components/community/CommunityCard'
 import { difficultyConfig, difficultyOrder } from '../constants/difficulty'
@@ -25,7 +25,7 @@ const modeCards: Array<{
   {
     value: 'race',
     title: 'Race',
-    description: 'Everyone solves the same puzzle separately. Fastest accurate solve wins.',
+    description: 'Fastest wins.',
     icon: TimerReset,
   },
 ]
@@ -85,8 +85,8 @@ export function OnlinePage() {
             <h1 className="mt-4 font-display text-4xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-5xl">
               Play Online
             </h1>
-            <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600 dark:text-slate-300">
-              Create a shared Sudoku room and play with friends in real time.
+            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300">
+              Create a room. Share the link. Play together.
             </p>
           </div>
 
@@ -102,8 +102,8 @@ export function OnlinePage() {
                 </p>
               </div>
             </div>
-            <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
-              Collaborative mode shares one live board. Race mode gives everyone the same puzzle with their own timer and score.
+            <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">
+              Shared board or head-to-head race.
             </p>
           </div>
         </div>
@@ -115,9 +115,20 @@ export function OnlinePage() {
           <h2 className="mt-3 font-display text-3xl font-semibold text-slate-950 dark:text-white">
             Set the session
           </h2>
-          <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-            Pick a mode, choose the puzzle difficulty, and share the room with friends.
-          </p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/90 p-3 dark:border-white/10 dark:bg-slate-950/45">
+              <Users2 className="h-4 w-4 text-cyan-700 dark:text-cyan-100" />
+              <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">1. Create</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/90 p-3 dark:border-white/10 dark:bg-slate-950/45">
+              <Link2 className="h-4 w-4 text-cyan-700 dark:text-cyan-100" />
+              <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">2. Share</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/90 p-3 dark:border-white/10 dark:bg-slate-950/45">
+              <TimerReset className="h-4 w-4 text-cyan-700 dark:text-cyan-100" />
+              <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">3. Play</p>
+            </div>
+          </div>
 
           <div className="mt-6 space-y-6">
             <div>
@@ -150,13 +161,13 @@ export function OnlinePage() {
                             : 'bg-slate-100 text-slate-600 dark:bg-white/8 dark:text-slate-300',
                         )}
                         >
-                          {isActive ? 'Selected' : 'Choose'}
+                        {isActive ? 'Selected' : 'Pick'}
                         </span>
                       </div>
                       <p className="mt-4 font-display text-xl font-semibold text-slate-950 dark:text-white">
                         {modeCard.title}
                       </p>
-                      <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                      <p className="mt-2 text-sm leading-5 text-slate-600 dark:text-slate-300">
                         {modeCard.description}
                       </p>
                     </button>
@@ -210,8 +221,8 @@ export function OnlinePage() {
               </p>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
                 {mode === 'collaborative'
-                  ? 'One shared board with live edits from everyone in the room.'
-                  : 'The same puzzle for every player, with live standings and a clear winner.'}
+                  ? 'Solve together on one board.'
+                  : 'Same puzzle. Separate boards. Live standings.'}
               </p>
             </div>
 

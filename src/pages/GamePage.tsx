@@ -157,16 +157,16 @@ export function GamePage() {
             <PreGameReadyCard
               eyebrow="Solo practice"
               title="Ready for your focus session?"
-              description="Choose your difficulty, start the timer, and solve the puzzle with focus."
+              description="Pick a level. Start focused. Solve clean."
               actionLabel="Start Game"
               onStart={startGame}
               stats={[
                 { label: 'Difficulty', value: difficultyConfig.label },
-                { label: 'Mistake limit', value: `${mistakeLimit}` },
+                { label: 'Mistakes', value: `${mistakeLimit}` },
                 { label: 'Free hints', value: `${FREE_HINT_LIMIT}` },
                 { label: 'Mode', value: 'Solo Practice' },
               ]}
-              footnote="The board, coach, and number pad unlock after you begin the session."
+              footnote="Board, coach, and controls unlock on start."
             />
 
             <div className="space-y-4 lg:sticky lg:top-24">

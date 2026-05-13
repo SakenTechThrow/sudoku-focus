@@ -41,7 +41,7 @@ export function LeaderboardPage() {
           <div>
             <p className="text-xs uppercase tracking-[0.28em] text-cyan-200/75">Leaderboard</p>
             <h1 className="mt-4 font-display text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-              Real player rankings
+              Leaderboard
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-8 text-slate-300">
               Compete by score, speed, and accuracy.
@@ -60,8 +60,8 @@ export function LeaderboardPage() {
                 </p>
               </div>
             </div>
-            <p className="mt-4 text-sm leading-7 text-slate-300">
-              Every saved puzzle can move you up the board. Higher scores, faster times, and cleaner solves win.
+            <p className="mt-4 text-sm leading-6 text-slate-300">
+              Higher score. Faster time. Cleaner solve.
             </p>
           </div>
         </div>

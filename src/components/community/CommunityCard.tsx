@@ -30,10 +30,10 @@ export function CommunityCard({ compact = false, className }: CommunityCardProps
             Join the Sudoku Focus Community
           </h2>
           <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-            Get daily challenges, product updates, and compete with other players in our Telegram community.
+            Daily drops, updates, and player chat.
           </p>
-          <p className="mt-3 text-sm leading-7 text-slate-500 dark:text-slate-400">
-            Share feedback, invite friends, and follow new feature releases.
+          <p className="mt-2 text-sm leading-7 text-slate-500 dark:text-slate-400">
+            Share feedback. Invite friends. Follow releases.
           </p>
         </div>
 
@@ -49,7 +49,7 @@ export function CommunityCard({ compact = false, className }: CommunityCardProps
           rel="noreferrer"
           className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-[color:#f8fbff] transition hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-cyan-50"
         >
-          Join Telegram Community
+          Join Telegram
           <ArrowUpRight className="h-4 w-4" />
         </a>
         <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">

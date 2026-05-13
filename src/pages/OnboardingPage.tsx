@@ -29,31 +29,31 @@ const goalOptions: Array<{
   {
     value: 'improve-focus',
     label: 'Improve focus',
-    description: 'Use short Sudoku sessions to reset attention between classes or meetings.',
+    description: 'Short sessions for sharper attention.',
     icon: Target,
   },
   {
     value: 'build-daily-habit',
     label: 'Build a daily habit',
-    description: 'Create a lightweight ritual that keeps your brain training consistent.',
+    description: 'Keep a simple daily streak.',
     icon: CalendarCheck2,
   },
   {
     value: 'compete-with-friends',
     label: 'Compete with friends',
-    description: 'Turn solving into shared momentum with leaderboards and online rooms.',
+    description: 'Race, rank, and share rooms.',
     icon: Swords,
   },
   {
     value: 'learn-sudoku-strategies',
     label: 'Learn Sudoku strategies',
-    description: 'Use coaching and candidate hints to understand patterns, not just answers.',
+    description: 'Learn patterns, not just answers.',
     icon: BrainCircuit,
   },
   {
     value: 'prepare-my-brain-in-the-morning',
     label: 'Prepare my brain in the morning',
-    description: 'Start the day with a clean mental warm-up before work or study begins.',
+    description: 'Use Sudoku as a morning reset.',
     icon: Zap,
   },
 ]
@@ -66,17 +66,17 @@ const experienceOptions: Array<{
   {
     value: 'beginner',
     label: 'Beginner',
-    description: 'I want a calmer start with more guidance.',
+    description: 'More guidance.',
   },
   {
     value: 'intermediate',
     label: 'Intermediate',
-    description: 'I know the basics and want regular challenge.',
+    description: 'Balanced challenge.',
   },
   {
     value: 'advanced',
     label: 'Advanced',
-    description: 'I want sharper pressure and faster improvement.',
+    description: 'Sharper pressure.',
   },
 ]
 
@@ -88,22 +88,22 @@ const preferredModeOptions: Array<{
   {
     value: 'solo-practice',
     label: 'Solo Practice',
-    description: 'Jump into a clean personal board whenever you need a focus reset.',
+    description: 'Quick personal sessions.',
   },
   {
     value: 'daily-challenge',
     label: 'Daily Challenge',
-    description: 'Use one shared daily puzzle to build rhythm and compare results.',
+    description: 'One shared puzzle each day.',
   },
   {
     value: 'online-race',
     label: 'Online Race',
-    description: 'Race friends on the same puzzle and chase the fastest accurate finish.',
+    description: 'Fastest accurate solve wins.',
   },
   {
     value: 'learn-with-ai-coach',
     label: 'Learn with AI Coach',
-    description: 'Use explanations and candidate coaching to improve with more confidence.',
+    description: 'Guided learning with tips.',
   },
 ]
 
@@ -173,7 +173,7 @@ export function OnboardingPage() {
         <h1 className="mt-4 font-display text-4xl font-semibold tracking-tight text-slate-950 dark:text-white sm:text-5xl">
           Welcome to Sudoku Focus
         </h1>
-        <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600 dark:text-slate-300">
+        <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 dark:text-slate-300">
           Choose how you want to train your brain.
         </p>
 
@@ -182,7 +182,7 @@ export function OnboardingPage() {
             <div className="flex items-center gap-2">
               <Target className="h-4 w-4 text-cyan-700 dark:text-cyan-200" />
               <h2 className="font-display text-2xl font-semibold text-slate-950 dark:text-white">
-                What are you optimizing for?
+                Your goal
               </h2>
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -231,7 +231,7 @@ export function OnboardingPage() {
             <div className="flex items-center gap-2">
               <CircleDot className="h-4 w-4 text-cyan-700 dark:text-cyan-200" />
               <h2 className="font-display text-2xl font-semibold text-slate-950 dark:text-white">
-                Experience level
+                Your level
               </h2>
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-3">
@@ -269,7 +269,7 @@ export function OnboardingPage() {
             <div className="flex items-center gap-2">
               <Clock3 className="h-4 w-4 text-cyan-700 dark:text-cyan-200" />
               <h2 className="font-display text-2xl font-semibold text-slate-950 dark:text-white">
-                Preferred mode
+                Start mode
               </h2>
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2">

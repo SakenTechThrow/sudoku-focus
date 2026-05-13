@@ -1,27 +1,20 @@
-import { useEffect, useState } from 'react'
 import { Brain, LoaderCircle, LogOut, MoonStar, SunMedium } from 'lucide-react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { navItems } from '../../constants/site'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
 import { buildAuthRedirectPath } from '../../lib/authRedirect'
-import { isOnboardingCompleted } from '../../lib/onboarding'
 import { cn } from '../../lib/utils'
 
 export function Navbar() {
   const location = useLocation()
   const { isAuthenticated, loading, profile, signOut } = useAuth()
   const { theme, toggleTheme } = useTheme()
-  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(true)
   const ThemeIcon = theme === 'dark' ? SunMedium : MoonStar
   const authLink = buildAuthRedirectPath(
     `${location.pathname}${location.search}`,
     '/profile',
   )
-
-  useEffect(() => {
-    setHasCompletedOnboarding(isOnboardingCompleted())
-  }, [location.pathname, location.search])
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-900/10 bg-white/72 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/70">

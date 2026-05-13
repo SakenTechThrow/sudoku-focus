@@ -233,9 +233,8 @@ export function HomePage() {
             <p className="mt-4 text-2xl font-medium text-slate-700 dark:text-slate-100">
               Train your brain in 5 minutes a day
             </p>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600 dark:text-slate-300 sm:text-lg">
-              A modern daily brain-training platform that turns Sudoku into a reliable focus
-              ritual, complete with coaching, progress insight, and social motivation.
+            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-300 sm:text-lg">
+              Focus training, coaching, and friendly competition in one place.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -258,17 +257,17 @@ export function HomePage() {
               <div className="rounded-2xl border border-slate-900/10 bg-slate-950/6 p-4 dark:border-white/10 dark:bg-slate-950/45">
                 <p className="text-xs uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">Average session</p>
                 <p className="mt-2 font-display text-3xl font-semibold text-slate-950 dark:text-white">5 min</p>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Designed to fit between classes and meetings.</p>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Built for busy days.</p>
               </div>
               <div className="rounded-2xl border border-slate-900/10 bg-slate-950/6 p-4 dark:border-white/10 dark:bg-slate-950/45">
                 <p className="text-xs uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">Retention loop</p>
                 <p className="mt-2 font-display text-3xl font-semibold text-slate-950 dark:text-white">Daily</p>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Fresh challenges encourage momentum, not burnout.</p>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Fresh puzzle. Daily loop.</p>
               </div>
               <div className="rounded-2xl border border-slate-900/10 bg-slate-950/6 p-4 dark:border-white/10 dark:bg-slate-950/45">
                 <p className="text-xs uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">Prototype angle</p>
                 <p className="mt-2 font-display text-3xl font-semibold text-slate-950 dark:text-white">Startup-ready</p>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Structured to grow into auth, analytics, and Supabase.</p>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Built like a startup prototype.</p>
               </div>
             </div>
 
@@ -289,7 +288,7 @@ export function HomePage() {
               See Sudoku Focus in action
             </h2>
           </div>
-          <p className="max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
+          <p className="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
             Sudoku Focus combines focus training, coaching, and friendly competition in one platform.
           </p>
         </div>
@@ -299,7 +298,7 @@ export function HomePage() {
             icon={PlayCircle}
             label="Core gameplay"
             title="Smart Sudoku Board"
-            description="Responsive board controls, quick number entry, notes, and session feedback built for real daily use."
+            description="Quick moves, notes, and clean session feedback."
             ctaLabel="Try Play Mode"
             to="/game"
           >
@@ -310,7 +309,7 @@ export function HomePage() {
             icon={BrainCircuit}
             label="Learning layer"
             title="AI Coach Explanation"
-            description="Rule-based guidance explains singles, conflicts, and the next logical move without interrupting the flow."
+            description="Fast strategy tips without breaking flow."
             ctaLabel="Open AI Coach"
             to="/game"
           >
@@ -321,7 +320,7 @@ export function HomePage() {
             icon={CalendarDays}
             label="Habit loop"
             title="Daily Challenge"
-            description="Everyone gets the same puzzle each day, so progress feels social, measurable, and easy to revisit."
+            description="One puzzle. One day. One board for everyone."
             ctaLabel="Join Daily Challenge"
             to="/daily"
           >
@@ -332,7 +331,7 @@ export function HomePage() {
             icon={Users2}
             label="Social play"
             title="Online Race Room"
-            description="Create a room, invite friends, and compare speed and accuracy on the same generated puzzle."
+            description="Create a room. Share the link. Race live."
             ctaLabel="Create Online Room"
             to="/online"
           >
@@ -378,9 +377,8 @@ export function HomePage() {
               Product foundation with room to grow
             </h2>
           </div>
-          <p className="max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
-            The first release already frames Sudoku Focus as a habit-building wellness product,
-            not a one-screen puzzle app.
+          <p className="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+            Core systems are live. More layers can grow on top.
           </p>
         </div>
 

@@ -45,8 +45,8 @@ export function ProfilePage() {
         <h1 className="mt-4 font-display text-4xl font-semibold tracking-tight text-white sm:text-5xl">
           Loading profile...
         </h1>
-        <p className="mt-4 max-w-2xl text-base leading-8 text-slate-300">
-          We&apos;re syncing your identity and profile details from Supabase.
+        <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
+          Syncing your profile.
         </p>
       </section>
     )
@@ -59,8 +59,8 @@ export function ProfilePage() {
         <h1 className="mt-4 font-display text-4xl font-semibold tracking-tight text-white sm:text-5xl">
           Sign in to unlock your profile
         </h1>
-        <p className="mt-4 max-w-2xl text-base leading-8 text-slate-300">
-          Your profile stores identity, city, and the foundation for synced progress, leaderboard entries, and future game history.
+        <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
+          Track XP, streaks, badges, and wins.
         </p>
         <Link
           to="/auth"
@@ -104,8 +104,8 @@ export function ProfilePage() {
             <h1 className="mt-4 font-display text-4xl font-semibold tracking-tight text-white sm:text-5xl">
               {profile?.username ?? 'Sudoku Focus User'}
             </h1>
-            <p className="mt-4 max-w-2xl text-base leading-8 text-slate-300">
-              Your account layer is connected. This page now surfaces identity details and a clean foundation for future synced stats.
+            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
+              Your progress, streaks, and wins in one place.
             </p>
           </div>
 

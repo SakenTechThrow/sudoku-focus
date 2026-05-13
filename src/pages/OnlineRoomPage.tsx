@@ -249,10 +249,10 @@ export function OnlineRoomPage() {
             <h1 className="mt-3 font-display text-3xl font-semibold text-slate-950 dark:text-white">
               Room {room.roomCode}
             </h1>
-            <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+            <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
               {room.mode === 'collaborative'
-                ? 'You are solving one shared board together.'
-                : 'Everyone solves the same puzzle separately. Fastest accurate solve wins.'}
+                ? 'Solve one shared board together.'
+                : 'Same puzzle. Fastest clean solve wins.'}
             </p>
           </div>
 
@@ -343,19 +343,19 @@ export function OnlineRoomPage() {
               eyebrow="Online room"
               title="Ready to join the room?"
               description={room.mode === 'collaborative'
-                ? 'You will solve one shared board together with other players.'
-                : 'You will solve your own board while competing with others.'}
+                ? 'One board. Shared live.'
+                : 'Your board. Live race.'}
               actionLabel="Start Playing"
               onStart={startGame}
               stats={[
                 { label: 'Mode', value: formatOnlineMode(room.mode) },
                 { label: 'Difficulty', value: difficultyMeta.label },
-                { label: 'Mistake limit', value: `${mistakeLimit}` },
+                { label: 'Mistakes', value: `${mistakeLimit}` },
                 { label: 'Players', value: `${players.length}` },
               ]}
               footnote={room.mode === 'collaborative'
-                ? 'The room is already live. Your local timer and board view begin only when you press Start Playing.'
-                : 'Your race timer stays at 00:00 until you choose to begin.'}
+                ? 'The room is live. Your view starts on click.'
+                : 'Your race timer stays at 00:00 until you start.'}
             />
           ) : (
             <section className="rounded-[1.9rem] border border-slate-200/90 bg-white/82 p-5 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-6">
@@ -365,14 +365,14 @@ export function OnlineRoomPage() {
               </h2>
               <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300 sm:text-base">
                 {room.mode === 'race'
-                  ? 'Joining the race room and preparing your personal board.'
-                  : 'Joining the collaborative room and syncing the shared session.'}
+                  ? 'Preparing your race board.'
+                  : 'Syncing the shared room.'}
               </p>
             </section>
           )}
 
           <div className="rounded-[1.8rem] border border-slate-200/90 bg-white/82 p-4 text-sm leading-6 text-slate-600 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur-sm dark:border-white/10 dark:bg-white/6 dark:text-slate-300 dark:shadow-[0_18px_60px_rgba(2,8,24,0.35)] sm:p-5 lg:sticky lg:top-24">
-            The room can keep syncing in real time before you begin, but your board stays hidden until you press Start Playing.
+            Room sync stays live before you start. Your board stays hidden.
           </div>
         </section>
       ) : (
@@ -386,8 +386,8 @@ export function OnlineRoomPage() {
                   </p>
                   <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-300">
                     {room.mode === 'collaborative'
-                      ? 'Every move updates the same room board for everyone.'
-                      : 'Everyone solves the same puzzle separately. Your moves do not change other players\' boards.'}
+                      ? 'Every move updates the same room board.'
+                      : 'Your moves only change your board.'}
                   </p>
                 </div>
                 <button

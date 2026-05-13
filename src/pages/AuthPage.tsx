@@ -127,10 +127,10 @@ export function AuthPage() {
         <h1 className="mt-4 font-display text-4xl font-semibold tracking-tight text-white sm:text-5xl">
           {mode === 'login' ? 'Welcome back' : 'Create your focus profile'}
         </h1>
-        <p className="mt-4 max-w-2xl text-base leading-8 text-slate-300">
+        <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
           {mode === 'login'
-            ? 'Sign in to keep your progress connected to your profile, leaderboard presence, and future analytics.'
-            : 'Start with an account so Sudoku Focus can personalize your profile, city ranking, and long-term progress.'}
+            ? 'Sign in to sync progress and stats.'
+            : 'Create an account to save progress and join the leaderboard.'}
         </p>
 
         {isOnlineRoomReturn ? (
@@ -143,19 +143,19 @@ export function AuthPage() {
           <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
             <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Profiles</p>
             <p className="mt-2 text-sm leading-6 text-slate-200">
-              Usernames, city, and XP-ready fields are connected through Supabase.
+              Username, city, and XP.
             </p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
             <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Auth</p>
             <p className="mt-2 text-sm leading-6 text-slate-200">
-              Email and password sign-in keeps the app simple and production-shaped.
+              Simple email login.
             </p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
             <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Next step</p>
             <p className="mt-2 text-sm leading-6 text-slate-200">
-              This foundation is ready for onboarding, game saves, leaderboards, and synced history later.
+              Ready for saves and rankings.
             </p>
           </div>
         </div>
@@ -284,7 +284,7 @@ export function AuthPage() {
             className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-50 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {loading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-            {mode === 'login' ? 'Login to Sudoku Focus' : 'Create account'}
+            {mode === 'login' ? 'Login' : 'Create account'}
           </button>
         </form>
 
@@ -292,7 +292,7 @@ export function AuthPage() {
           <div className="flex items-start gap-3">
             <ShieldCheck className="mt-0.5 h-5 w-5 text-cyan-200" />
             <p className="text-sm leading-6 text-slate-300">
-              Auth is handled with Supabase. After sign in, your profile page becomes the home for identity, city, and future synced progress.
+              Supabase powers sign-in and synced profile data.
             </p>
           </div>
         </div>
