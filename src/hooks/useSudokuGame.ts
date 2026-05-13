@@ -145,6 +145,7 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
   )
   const [notesMode, setNotesMode] = useState(restoredState?.notesMode ?? false)
   const [hasStarted, setHasStarted] = useState(restoredState?.hasStarted ?? false)
+  const [startedAt, setStartedAt] = useState<number | null>(restoredState?.startedAt ?? null)
   const [isPaused, setIsPaused] = useState(restoredState?.isPaused ?? false)
   const [sessionId, setSessionId] = useState(1)
   const [checkResult, setCheckResult] = useState<CheckResult | null>(null)
@@ -196,6 +197,7 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
     }
 
     setHasStarted(true)
+    setStartedAt(Date.now())
     setIsPaused(false)
     timer.start()
   }
@@ -206,6 +208,7 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
     }
 
     setHasStarted(true)
+    setStartedAt(Date.now())
     setIsPaused(false)
     timer.start()
   }
@@ -228,6 +231,7 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
     setStatus('playing')
     setNotesMode(false)
     setHasStarted(false)
+    setStartedAt(null)
     setIsPaused(false)
     setSessionId((current) => current + 1)
     clearCheckResult()
@@ -498,6 +502,7 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
     setStatus('playing')
     setNotesMode(false)
     setHasStarted(false)
+    setStartedAt(null)
     setIsPaused(false)
     setSessionId((current) => current + 1)
     clearCheckResult()
@@ -577,6 +582,7 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
       status,
       notesMode,
       hasStarted,
+      startedAt,
       isPaused,
     }
 
@@ -594,6 +600,7 @@ export function useSudokuGame(options: UseSudokuGameOptions = {}) {
     status,
     notesMode,
     hasStarted,
+    startedAt,
     isPaused,
     saveGameState,
   ])

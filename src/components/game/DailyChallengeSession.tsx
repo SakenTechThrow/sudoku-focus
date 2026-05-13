@@ -133,6 +133,12 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
   const showReadyScreen = !hasStarted && !isGameOver
 
   useEffect(() => {
+    if (import.meta.env.DEV) {
+      console.log('Daily hasStarted:', hasStarted)
+    }
+  }, [hasStarted])
+
+  useEffect(() => {
     setSaveState(null)
     setSaveLoading(false)
     setSavedSessionId(null)
@@ -193,9 +199,10 @@ export function DailyChallengeSession({ challenge }: DailyChallengeSessionProps)
             actionLabel="Start Daily Challenge"
             onStart={startGame}
             stats={[
-              { label: 'Date', value: formatChallengeDate(challenge.challengeDate) },
+              { label: 'Today', value: formatChallengeDate(challenge.challengeDate) },
               { label: 'Difficulty', value: difficultyConfig.label },
               { label: 'Mistakes', value: `${mistakeLimit}` },
+              { label: 'Free hints', value: '3' },
               { label: 'Leaderboard', value: 'Daily standings' },
             ]}
             footnote="Win to submit your result."

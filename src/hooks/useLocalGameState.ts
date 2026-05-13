@@ -47,6 +47,22 @@ function isValidNotesBoard(notes: unknown): notes is NotesBoard {
     )
 }
 
+function hasBoardProgress(board: SudokuBoard, puzzle: SudokuBoard) {
+  for (let row = 0; row < 9; row += 1) {
+    for (let col = 0; col < 9; col += 1) {
+      if (board[row][col] !== puzzle[row][col]) {
+        return true
+      }
+    }
+  }
+
+  return false
+}
+
+function hasNotesProgress(notes: NotesBoard) {
+  return notes.some((row) => row.some((cell) => cell.length > 0))
+}
+
 function isValidPersistedState(state: unknown): state is PersistedSudokuGameState {
   if (!state || typeof state !== 'object') {
     return false
@@ -74,6 +90,11 @@ function isValidPersistedState(state: unknown): state is PersistedSudokuGameStat
     )
     && typeof candidate.notesMode === 'boolean'
     && (candidate.hasStarted === undefined || typeof candidate.hasStarted === 'boolean')
+    && (
+      candidate.startedAt === undefined
+      || candidate.startedAt === null
+      || typeof candidate.startedAt === 'number'
+    )
     && (candidate.isPaused === undefined || typeof candidate.isPaused === 'boolean')
 }
 
@@ -95,12 +116,22 @@ function normalizeStatus(state: Pick<PersistedSudokuGameState, 'completed' | 'mi
 
 function normalizePersistedState(state: PersistedSudokuGameState): PersistedSudokuGameState {
   const status = normalizeStatus(state)
-  const hasStarted = state.hasStarted ?? (
+  const startedAt = typeof state.startedAt === 'number' && Number.isFinite(state.startedAt)
+    ? state.startedAt
+    : null
+  const hasMeaningfulProgress = (
     state.completed
     || status === 'won'
     || status === 'lost'
     || state.seconds > 0
+    || state.mistakes > 0
+    || state.hintsUsed > 0
+    || hasBoardProgress(state.board, state.puzzle)
+    || hasNotesProgress(state.notes)
   )
+  const hasStarted = state.hasStarted === true
+    ? startedAt !== null || hasMeaningfulProgress
+    : state.hasStarted ?? (startedAt !== null || hasMeaningfulProgress)
   const isPaused = status === 'playing'
     ? Boolean(state.isPaused ?? false)
     : false
@@ -109,6 +140,7 @@ function normalizePersistedState(state: PersistedSudokuGameState): PersistedSudo
     ...state,
     status,
     hasStarted,
+    startedAt,
     isPaused,
   }
 }
