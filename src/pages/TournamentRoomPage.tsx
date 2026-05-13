@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Copy, Crown, RefreshCw, Swords, Trophy, Users } from 'lucide-react'
+import { Copy, Crown, RefreshCw, Swords } from 'lucide-react'
 import { Navigate, useLocation, useParams } from 'react-router-dom'
 import { CommunityCard } from '../components/community/CommunityCard'
 import { TournamentBracket } from '../components/tournament/TournamentBracket'
@@ -31,9 +31,7 @@ export function TournamentRoomPage() {
     submittingResult,
     membershipLoading,
     error,
-    isHost,
     canStartTournament,
-    isWaitingForOpponent,
     isWaitingForNextRound,
     isEliminated,
     isChampion,

@@ -505,14 +505,14 @@ export function useTournament(
       return
     }
 
-    const response = await runWithTimeout(
+    const nextRoundResponse = await runWithTimeout(
       client
         .from('tournament_matches')
         .select('id')
         .eq('tournament_id', nextTournament.id)
         .eq('round_key', nextRoundKey),
     )
-    const { data: existingNextRoundMatches, error: nextRoundError } = response as {
+    const { data: existingNextRoundMatches, error: nextRoundError } = nextRoundResponse as {
       data: Array<{ id: string }> | null
       error: unknown
     }
@@ -522,13 +522,13 @@ export function useTournament(
     }
 
     if ((existingNextRoundMatches?.length ?? 0) > 0) {
-      const response = await runWithTimeout(
+      const updateRoundResponse = await runWithTimeout(
         client
           .from('tournaments')
           .update({ current_round: nextRoundKey })
           .eq('id', nextTournament.id),
       )
-      const { error: updateRoundError } = response as { error: unknown }
+      const { error: updateRoundError } = updateRoundResponse as { error: unknown }
 
       if (updateRoundError) {
         throw updateRoundError
@@ -569,24 +569,24 @@ export function useTournament(
       return
     }
 
-    const response = await runWithTimeout(
+    const insertRoundResponse = await runWithTimeout(
       client
         .from('tournament_matches')
         .insert(nextRoundMatches),
     )
-    const { error: insertRoundError } = response as { error: unknown }
+    const { error: insertRoundError } = insertRoundResponse as { error: unknown }
 
     if (insertRoundError) {
       throw insertRoundError
     }
 
-    const response = await runWithTimeout(
+    const finalizeRoundResponse = await runWithTimeout(
       client
         .from('tournaments')
         .update({ current_round: nextRoundKey })
         .eq('id', nextTournament.id),
     )
-    const { error: updateRoundError } = response as { error: unknown }
+    const { error: updateRoundError } = finalizeRoundResponse as { error: unknown }
 
     if (updateRoundError) {
       throw updateRoundError
