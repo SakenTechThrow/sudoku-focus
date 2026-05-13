@@ -49,6 +49,7 @@ type GameControlPanelProps = {
   onClearSavedProgress: () => void
   showDifficultySelector?: boolean
   showStartNewGame?: boolean
+  showResetGame?: boolean
   showClearSavedProgress?: boolean
   startNewGameLabel?: string
   clearSavedProgressLabel?: string
@@ -83,6 +84,7 @@ export function GameControlPanel({
   onClearSavedProgress,
   showDifficultySelector = true,
   showStartNewGame = true,
+  showResetGame = true,
   showClearSavedProgress = true,
   startNewGameLabel = 'New Game',
   clearSavedProgressLabel = 'Clear Saved Game',
@@ -242,14 +244,16 @@ export function GameControlPanel({
             <Eraser className="h-4 w-4" />
             Clear Value
           </button>
-          <button
-            type="button"
-            onClick={onResetGame}
-            className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:border-cyan-300/35 hover:bg-cyan-50/70 dark:border-white/10 dark:bg-slate-950/55 dark:text-white dark:hover:bg-slate-900/80"
-          >
-            <RotateCcw className="h-4 w-4" />
-            Reset Current Game
-          </button>
+          {showResetGame ? (
+            <button
+              type="button"
+              onClick={onResetGame}
+              className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:border-cyan-300/35 hover:bg-cyan-50/70 dark:border-white/10 dark:bg-slate-950/55 dark:text-white dark:hover:bg-slate-900/80"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Reset Current Game
+            </button>
+          ) : null}
           {showClearSavedProgress ? (
             <button
               type="button"

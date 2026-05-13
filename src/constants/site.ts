@@ -17,6 +17,7 @@ export const navItems: NavItem[] = [
   { label: 'Home', to: '/' },
   { label: 'Play', to: '/game' },
   { label: 'Online', to: '/online' },
+  { label: 'Tournaments', to: '/tournaments' },
   { label: 'Daily', to: '/daily' },
   { label: 'Leaderboard', to: '/leaderboard' },
   { label: 'Pro', to: '/pro' },

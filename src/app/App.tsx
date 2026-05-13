@@ -12,6 +12,8 @@ import { OnlineRoomPage } from '../pages/OnlineRoomPage'
 import { OnboardingPage } from '../pages/OnboardingPage'
 import { ProPage } from '../pages/ProPage'
 import { ProfilePage } from '../pages/ProfilePage'
+import { TournamentRoomPage } from '../pages/TournamentRoomPage'
+import { TournamentsPage } from '../pages/TournamentsPage'
 
 function App() {
   return (
@@ -24,6 +26,8 @@ function App() {
             <Route path="/game" element={<GamePage />} />
             <Route path="/online" element={<OnlinePage />} />
             <Route path="/online/:roomCode" element={<OnlineRoomPage />} />
+            <Route path="/tournaments" element={<TournamentsPage />} />
+            <Route path="/tournaments/:tournamentCode" element={<TournamentRoomPage />} />
             <Route path="/daily" element={<DailyChallengePage />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
