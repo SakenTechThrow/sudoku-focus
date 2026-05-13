@@ -50,6 +50,7 @@ export function AuthPage() {
   const returnTo = sanitizeReturnTo(requestedReturnTo, '/profile')
   const hasExplicitReturnTo = Boolean(requestedReturnTo)
   const isOnlineRoomReturn = returnTo.startsWith('/online/')
+  const isTournamentReturn = returnTo.startsWith('/tournaments/')
 
   useEffect(() => {
     if (!loading && isAuthenticated && !hasCompletedAuthAction) {
@@ -136,6 +137,10 @@ export function AuthPage() {
         {isOnlineRoomReturn ? (
           <div className="mt-5 inline-flex rounded-full border border-cyan-300/20 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-100">
             Sign in to join your friend&apos;s Sudoku room.
+          </div>
+        ) : isTournamentReturn ? (
+          <div className="mt-5 inline-flex rounded-full border border-cyan-300/20 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-100">
+            Sign in to join the tournament bracket.
           </div>
         ) : null}
 

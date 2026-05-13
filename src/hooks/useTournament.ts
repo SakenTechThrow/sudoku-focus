@@ -28,7 +28,9 @@ import type {
 import { useAuth } from './useAuth'
 
 const TOURNAMENT_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-const TOURNAMENT_NOT_FOUND_MESSAGE = 'Tournament not found.'
+const TOURNAMENT_NOT_FOUND_MESSAGE = 'Tournament not found or expired.'
+const TOURNAMENT_STARTED_MESSAGE = 'Tournament already started.'
+const TOURNAMENT_FULL_MESSAGE = 'Tournament is full.'
 const TOURNAMENT_TIMEOUT_MS = 15000
 const PROFILE_FALLBACK_CITY = 'Almaty'
 const POWER_OF_TWO_PLAYER_COUNTS = new Set([2, 4, 8, 16, 32])
@@ -424,7 +426,7 @@ export function useTournament(
     }
 
     if (existingPlayers.length >= nextTournament.maxPlayers) {
-      throw new Error('Tournament is full.')
+      throw new Error(TOURNAMENT_FULL_MESSAGE)
     }
 
     setMembershipLoading(true)
@@ -626,15 +628,22 @@ export function useTournament(
         fetchTournamentResults(nextTournament.id),
       ])
 
-      const hydratedPlayers = isAuthenticated
-        ? await ensurePlayerInTournament(nextTournament, loadedPlayers)
-        : loadedPlayers
+      let hydratedPlayers = loadedPlayers
+      let accessError: string | null = null
+
+      if (isAuthenticated) {
+        try {
+          hydratedPlayers = await ensurePlayerInTournament(nextTournament, loadedPlayers)
+        } catch (membershipError) {
+          accessError = getErrorMessage(membershipError, 'Could not join the tournament.')
+        }
+      }
 
       setTournament(nextTournament)
       setPlayers(hydratedPlayers)
       setMatches(loadedMatches)
       setResults(loadedResults)
-      setError(null)
+      setError(accessError)
 
       void maybeAdvanceTournament(nextTournament, hydratedPlayers, loadedMatches)
     } catch (loadError) {
@@ -871,14 +880,14 @@ export function useTournament(
       }
 
       if (nextTournament.status !== 'waiting') {
-        return { ok: false, message: 'Tournament already started.' }
+        return { ok: false, message: TOURNAMENT_STARTED_MESSAGE }
       }
 
       const nextPlayers = await fetchTournamentPlayers(nextTournament.id)
       const currentPlayerEntry = nextPlayers.find((player) => player.userId === user.id)
 
       if (!currentPlayerEntry && nextPlayers.length >= nextTournament.maxPlayers) {
-        return { ok: false, message: 'Tournament is full.' }
+        return { ok: false, message: TOURNAMENT_FULL_MESSAGE }
       }
 
       await ensurePlayerInTournament(nextTournament, nextPlayers)

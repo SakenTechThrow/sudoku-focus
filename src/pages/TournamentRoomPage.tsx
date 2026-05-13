@@ -41,6 +41,9 @@ export function TournamentRoomPage() {
   } = useTournament(tournamentCode, { enabled: !authLoading && isAuthenticated })
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null)
   const [startFeedback, setStartFeedback] = useState<string | null>(null)
+  const inviteLink = typeof window === 'undefined'
+    ? `/tournaments/${tournamentCode}`
+    : `${window.location.origin}/tournaments/${tournamentCode}`
 
   const roundLabel = tournament ? getTournamentRoundLabel(tournament.currentRound) : ''
   const activeMatchRoundLabel = currentMatch ? getTournamentRoundLabel(currentMatch.roundKey) : roundLabel
@@ -70,9 +73,8 @@ export function TournamentRoomPage() {
 
   async function handleCopyInviteLink() {
     try {
-      const inviteLink = `${window.location.origin}/tournaments/${tournamentCode}`
       await navigator.clipboard.writeText(inviteLink)
-      setCopyFeedback('Invite link copied.')
+      setCopyFeedback('Tournament invite copied!')
       window.setTimeout(() => setCopyFeedback(null), 2500)
     } catch {
       setCopyFeedback('Could not copy the invite link from this browser.')
@@ -135,7 +137,7 @@ export function TournamentRoomPage() {
     return (
       <section className="rounded-[2rem] border border-rose-200 bg-rose-100/85 p-8 text-center dark:border-rose-300/20 dark:bg-rose-400/10">
         <h1 className="font-display text-3xl font-semibold text-slate-950 dark:text-white">
-          Tournament not found
+          Tournament not found or expired.
         </h1>
         <p className="mt-3 text-sm leading-7 text-rose-950 dark:text-rose-100">
           {error ?? 'This bracket could not be loaded.'}
@@ -213,17 +215,37 @@ export function TournamentRoomPage() {
                   Invite
                 </p>
                 <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                  Share the bracket link.
+                  Invite friends to join this bracket.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => void handleCopyInviteLink()}
+                aria-label="Copy tournament invite link"
                 className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-800 transition hover:border-cyan-300/35 hover:bg-cyan-50/70 dark:border-white/10 dark:bg-slate-950/55 dark:text-slate-200 dark:hover:bg-slate-900/80"
               >
                 <Copy className="h-4 w-4" />
-                Copy link
+                {copyFeedback ? 'Copied!' : 'Copy Invite Link'}
               </button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-3 dark:border-white/10 dark:bg-slate-950/55">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                  Tournament code
+                </p>
+                <p className="mt-2 font-mono text-sm font-semibold tracking-[0.22em] text-slate-950 dark:text-white">
+                  {tournament.tournamentCode}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white/85 px-4 py-3 dark:border-white/10 dark:bg-slate-950/55">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                  Invite link
+                </p>
+                <p className="mt-2 break-all text-sm text-slate-700 dark:text-slate-200">
+                  {inviteLink}
+                </p>
+              </div>
             </div>
 
             {copyFeedback ? (
@@ -241,6 +263,22 @@ export function TournamentRoomPage() {
           </div>
         </div>
       </section>
+
+      {!currentPlayer && tournament.status === 'waiting' && players.length >= tournament.maxPlayers ? (
+        <section className="rounded-[1.9rem] border border-amber-200 bg-amber-100/85 p-5 dark:border-amber-300/20 dark:bg-amber-400/10">
+          <p className="text-sm text-amber-950 dark:text-amber-50">
+            Tournament is full.
+          </p>
+        </section>
+      ) : null}
+
+      {!currentPlayer && tournament.status !== 'waiting' ? (
+        <section className="rounded-[1.9rem] border border-amber-200 bg-amber-100/85 p-5 dark:border-amber-300/20 dark:bg-amber-400/10">
+          <p className="text-sm text-amber-950 dark:text-amber-50">
+            Tournament already started.
+          </p>
+        </section>
+      ) : null}
 
       {tournament.status === 'waiting' ? (
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">

@@ -192,9 +192,9 @@ export function TournamentMatchSession({
         {showReadyScreen ? (
           <PreGameReadyCard
             eyebrow="Tournament"
-            title="Ready to play your match?"
-            description="Fast focus wins. Clean solves advance."
-            actionLabel="Start Playing"
+            title="Ready for your match?"
+            description="Win this round to advance."
+            actionLabel="Start Match"
             onStart={startGame}
             stats={[
               { label: 'Round', value: roundLabel },
@@ -202,7 +202,7 @@ export function TournamentMatchSession({
               { label: 'Mistakes', value: `${mistakeLimit}` },
               { label: 'Free hints', value: `${FREE_HINT_LIMIT}` },
             ]}
-            footnote="Your timer starts on Start Playing."
+            footnote="Your timer starts on Start Match."
           />
         ) : (
           <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_22rem]">

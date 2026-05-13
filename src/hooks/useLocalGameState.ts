@@ -93,22 +93,6 @@ function normalizeStatus(state: Pick<PersistedSudokuGameState, 'completed' | 'mi
   return 'playing'
 }
 
-function hasBoardProgress(board: SudokuBoard, puzzle: SudokuBoard) {
-  for (let row = 0; row < 9; row += 1) {
-    for (let col = 0; col < 9; col += 1) {
-      if (board[row][col] !== puzzle[row][col]) {
-        return true
-      }
-    }
-  }
-
-  return false
-}
-
-function hasNotesProgress(notes: NotesBoard) {
-  return notes.some((row) => row.some((cell) => cell.length > 0))
-}
-
 function normalizePersistedState(state: PersistedSudokuGameState): PersistedSudokuGameState {
   const status = normalizeStatus(state)
   const hasStarted = state.hasStarted ?? (
@@ -116,10 +100,6 @@ function normalizePersistedState(state: PersistedSudokuGameState): PersistedSudo
     || status === 'won'
     || status === 'lost'
     || state.seconds > 0
-    || state.mistakes > 0
-    || state.hintsUsed > 0
-    || hasBoardProgress(state.board, state.puzzle)
-    || hasNotesProgress(state.notes)
   )
   const isPaused = status === 'playing'
     ? Boolean(state.isPaused ?? false)

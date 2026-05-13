@@ -14,7 +14,7 @@ const maxPlayerOptions = [4, 8, 16, 32] as const
 export function TournamentsPage() {
   const navigate = useNavigate()
   const { isAuthenticated, profile, user } = useAuth()
-  const { createTournament, joinTournament, actionLoading } = useTournament()
+  const { createTournament, actionLoading } = useTournament()
   const [title, setTitle] = useState('Sudoku Focus Tournament')
   const [difficulty, setDifficulty] = useState<Difficulty>('medium')
   const [maxPlayers, setMaxPlayers] = useState<(typeof maxPlayerOptions)[number]>(8)
@@ -46,20 +46,19 @@ export function TournamentsPage() {
 
   async function handleJoinTournament() {
     setJoinFeedback(null)
+    const normalizedCode = tournamentCode.trim().toUpperCase()
+
+    if (!normalizedCode) {
+      setJoinFeedback('Enter a tournament code.')
+      return
+    }
 
     if (!isAuthenticated) {
-      navigate(buildAuthRedirectPath('/tournaments'))
+      navigate(buildAuthRedirectPath(`/tournaments/${normalizedCode}`, '/tournaments'))
       return
     }
 
-    const result = await joinTournament(tournamentCode)
-
-    if (!result.ok) {
-      setJoinFeedback(result.message)
-      return
-    }
-
-    navigate(`/tournaments/${result.tournamentCode}`)
+    navigate(`/tournaments/${normalizedCode}`)
   }
 
   return (
